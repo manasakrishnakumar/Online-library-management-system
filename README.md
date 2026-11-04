@@ -91,6 +91,12 @@ To demo a fine in the UI: Lending page, press **Make overdue** on an issued loan
 
 Resilience demo: `docker compose stop book-service`, then issue a book. The circuit breaker answers `503` instead of hanging; `docker compose start book-service` recovers it.
 
+## API documentation (OpenAPI) and tests
+
+- Each business service serves interactive Swagger UI while running: book <http://localhost:8081/swagger-ui.html>, member `:8082`, lending `:8083`, fine `:8084`, notification `:8085`.
+- The generated OpenAPI 3 specifications are saved in [docs/openapi](docs/openapi) (the SEED(S) step "describe each action and query with an open standard").
+- Unit tests (10 tests across book, lending and fine services): `mvn test`, or with Docker only: `docker run --rm -v "%cd%:/src" -w /src maven:3.9-eclipse-temurin-17 mvn -B test`.
+
 ## Syllabus coverage
 
 See [docs/SYLLABUS_COVERAGE.md](docs/SYLLABUS_COVERAGE.md) for the unit-by-unit mapping, and [docs/DESIGN.md](docs/DESIGN.md) for the SEED(S) design artefacts (actors, jobs, sequence diagram, event storming, service sizing).
