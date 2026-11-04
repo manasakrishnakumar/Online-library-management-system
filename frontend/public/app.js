@@ -5,8 +5,19 @@ const $ = (s, r = document) => r.querySelector(s);
 const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const today = () => new Date().toISOString().slice(0, 10);
 
+let session = null;
+try { session = JSON.parse(sessionStorage.getItem("lib.session")); } catch { session = null; }
+const saveSession = s => {
+  session = s;
+  try { s ? sessionStorage.setItem("lib.session", JSON.stringify(s)) : sessionStorage.removeItem("lib.session"); } catch { /* storage blocked */ }
+};
+const isLibrarian = () => session && session.role === "LIBRARIAN";
+
 async function api(method, path, body) {
-  const res = await fetch(path, { method, headers: { "Content-Type": "application/json" }, body: body ? JSON.stringify(body) : undefined });
+  const headers = { "Content-Type": "application/json" };
+  if (session) headers.Authorization = "Bearer " + session.token;
+  const res = await fetch(path, { method, headers, body: body ? JSON.stringify(body) : undefined });
+  if (res.status === 401 && session) { saveSession(null); showLogin("Your session ended, please sign in again."); throw new Error("Please sign in again"); }
   const text = await res.text();
   let data = null;
   try { data = text ? JSON.parse(text) : null; } catch { data = text; }
@@ -42,7 +53,7 @@ document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal()
 function table(cols, rows, actions) {
   if (!rows.length) return `<div class="empty">Nothing here yet.</div>`;
   const head = cols.map(c => `<th>${esc(c.h)}</th>`).join("") + (actions ? "<th></th>" : "");
-  const body = rows.map(r => `<tr>${cols.map(c => `<td>${c.f ? c.f(r) : esc(r[c.k])}</td>`).join("")}${actions ? `<td class="act">${actions(r)}</td>` : ""}</tr>`).join("");
+  const body = rows.map(r => `<tr>${cols.map(c => `<td${c.w ? ' class="w"' : ""}>${c.f ? c.f(r) : esc(r[c.k])}</td>`).join("")}${actions ? `<td class="act">${actions(r)}</td>` : ""}</tr>`).join("");
   return `<div class="tw"><table><tr>${head}</tr>${body}</table></div>`;
 }
 
@@ -68,12 +79,13 @@ pages.dashboard = async view => {
       ${stat("₹" + unpaid.toFixed(2), "Unpaid fines")}
     </div>
     <div class="panel"><h2>Currently on loan</h2>${table([
-      { h: "Book", k: "bookTitle" }, { h: "Member", k: "memberName" },
+      { h: "Book", k: "bookTitle", w: 1 }, { h: "Member", k: "memberName", w: 1 },
       { h: "Due", k: "dueDate" }, { h: "Status", f: l => isOverdue(l) ? '<span class="tag bad">Overdue</span>' : '<span class="tag ok">On time</span>' }
     ], active)}</div>`;
 };
 
 pages.books = async view => {
+  const ro = !isLibrarian();
   let books = await api("GET", "/api/books");
   let q = "", page = 0;
   const PAGE = 25;
@@ -83,12 +95,12 @@ pages.books = async view => {
     page = Math.min(page, pages - 1);
     const rows = all.slice(page * PAGE, page * PAGE + PAGE);
     $("#list").innerHTML = table([
-      { h: "Title", k: "title" }, { h: "Author", k: "author" }, { h: "Category", k: "category" }, { h: "ISBN", k: "isbn" },
+      { h: "Title", k: "title", w: 1 }, { h: "Author", k: "author", w: 1 }, { h: "Category", k: "category" }, { h: "ISBN", k: "isbn" },
       { h: "Available", f: b => b.availableCopies > 0 ? `<span class="tag ok">${b.availableCopies} / ${b.totalCopies}</span>` : `<span class="tag bad">0 / ${b.totalCopies}</span>` }
-    ], rows, b => `<button class="b s" data-edit="${b.id}">Edit</button><button class="b s d" data-del="${b.id}">Delete</button>`) +
+    ], rows, ro ? null : b => `<button class="b s" data-edit="${b.id}">Edit</button><button class="b s d" data-del="${b.id}">Delete</button>`) +
       `<div class="bar" style="margin:12px 0 0"><button class="b s" data-pg="-1" ${page === 0 ? "disabled" : ""}>Previous</button><span>Page ${page + 1} of ${pages} &middot; ${all.length} books</span><button class="b s" data-pg="1" ${page >= pages - 1 ? "disabled" : ""}>Next</button></div>`;
   };
-  view.innerHTML = `<div class="bar"><input id="q" type="search" placeholder="Search title, author, category or ISBN"><span class="grow"></span><button class="b p" id="add">Add book</button></div><div class="panel" id="list"></div>`;
+  view.innerHTML = `<div class="bar"><input id="q" type="search" placeholder="Search title, author, category or ISBN"><span class="grow"></span>${ro ? "" : '<button class="b p" id="add">Add book</button>'}</div><div class="panel" id="list"></div>`;
   draw();
   $("#q").oninput = e => { q = e.target.value; page = 0; draw(); };
   const form = (title, b) => {
@@ -107,7 +119,7 @@ pages.books = async view => {
       closeModal(); toast(b ? "Book updated" : "Book added"); route();
     });
   };
-  $("#add").onclick = () => form("Add book");
+  if (!ro) $("#add").onclick = () => form("Add book");
   $("#list").onclick = safe(async e => {
     const edit = e.target.dataset.edit, del = e.target.dataset.del;
     if (e.target.dataset.pg) { page += +e.target.dataset.pg; draw(); return; }
@@ -153,9 +165,9 @@ pages.lending = async view => {
   loans.sort((a, b) => b.id - a.id);
   view.innerHTML = `<div class="bar"><span class="grow"></span><button class="b p" id="issue">Issue a book</button></div>
     <div class="panel">${table([
-      { h: "#", k: "id" }, { h: "Book", k: "bookTitle" }, { h: "Member", k: "memberName" },
+      { h: "#", k: "id" }, { h: "Book", k: "bookTitle", w: 1 }, { h: "Member", k: "memberName", w: 1 },
       { h: "Issued", k: "issueDate" }, { h: "Due", k: "dueDate" }, { h: "Returned", f: l => esc(l.returnDate || "-") },
-      { h: "Status", f: l => l.status === "RETURNED" ? '<span class="tag ok">Returned</span>' : isOverdue(l) ? '<span class="tag bad">Overdue</span>' : '<span class="tag warn">Issued</span>' }
+      { h: "Status", f: l => l.status === "RETURNED" ? '<span class="tag ok">Returned</span>' : l.status === "FAILED" ? `<span class="tag bad" title="${esc(l.failureReason)}">Failed</span>` : l.status === "PENDING" ? '<span class="tag warn">Pending</span>' : isOverdue(l) ? '<span class="tag bad">Overdue</span>' : '<span class="tag warn">Issued</span>' }
     ], loans, l => (l.status === "ISSUED" ? `<button class="b s" data-ret="${l.id}">Return</button>` : "") +
       `<button class="b s" data-fine="${l.id}">Fine</button><button class="b s" data-hist="${l.id}">History</button>` +
       (l.status === "ISSUED" ? `<button class="b s" data-late="${l.id}" title="Demo: make this loan 20 days overdue">Make overdue</button>` : ""))}</div>`;
@@ -173,7 +185,7 @@ pages.lending = async view => {
       e.preventDefault();
       const d = Object.fromEntries(new FormData(e.target));
       const loan = await api("POST", "/api/loans/issue", { bookId: +d.bookId, memberId: +d.memberId });
-      closeModal(); toast("Issued. Due on " + loan.dueDate); route();
+      closeModal(); toast(loan.status === "PENDING" ? "Accepted: a service is unavailable, the loan will complete automatically" : "Issued. Due on " + loan.dueDate); route();
     });
   };
   view.querySelector(".panel").onclick = safe(async e => {
@@ -212,6 +224,28 @@ pages.notifications = async view => {
     { h: "Message", f: n => `<span style="white-space:normal">${esc(n.message)}</span>` }], list)}</div>`;
 };
 
+pages.myloans = async view => {
+  const loans = (await api("GET", "/api/loans/member/" + session.memberId)).sort((x, y) => y.id - x.id);
+  view.innerHTML = `<div class="panel">${table([
+    { h: "Book", k: "bookTitle", w: 1 }, { h: "Issued", k: "issueDate" }, { h: "Due", k: "dueDate" }, { h: "Returned", f: l => esc(l.returnDate || "-") },
+    { h: "Status", f: l => l.status === "RETURNED" ? '<span class="tag ok">Returned</span>' : isOverdue(l) ? '<span class="tag bad">Overdue</span>' : '<span class="tag warn">' + esc(l.status) + '</span>' }
+  ], loans)}</div>`;
+};
+
+pages.myfines = async view => {
+  const fines = await api("GET", "/api/fines/member/" + session.memberId);
+  view.innerHTML = `<div class="panel">${table([
+    { h: "Loan #", k: "loanId" }, { h: "Days late", k: "daysOverdue" }, { h: "Amount", f: f => "₹" + Number(f.amount).toFixed(2) },
+    { h: "Status", f: f => f.paid ? '<span class="tag ok">Paid</span>' : '<span class="tag bad">Unpaid</span>' }
+  ], fines)}</div>`;
+};
+
+pages.mynotes = async view => {
+  const list = await api("GET", "/api/notifications/member/" + session.memberId);
+  view.innerHTML = `<div class="panel">${table([
+    { h: "When", f: n => esc(new Date(n.createdAt).toLocaleString()) }, { h: "Message", f: n => `<span style="white-space:normal">${esc(n.message)}</span>` }], list)}</div>`;
+};
+
 pages.system = async view => {
   const services = [
     ["API Gateway", "/gateway-health"], ["Book Service", "/api/books"], ["Member Service", "/api/members"],
@@ -219,7 +253,7 @@ pages.system = async view => {
   ];
   const results = await Promise.all(services.map(async ([n, u]) => {
     const t = performance.now();
-    try { const r = await fetch(u); return [n, r.ok, Math.round(performance.now() - t)]; } catch { return [n, false, 0]; }
+    try { const r = await fetch(u, { headers: { Authorization: "Bearer " + session.token } }); return [n, r.ok, Math.round(performance.now() - t)]; } catch { return [n, false, 0]; }
   }));
   view.innerHTML = `<div class="panel"><h2>Service health (checked through the gateway)</h2>${results.map(([n, ok, ms]) =>
     `<div class="svc"><span>${esc(n)}</span><span>${ok ? `<small>${ms} ms</small> <span class="tag ok">Up</span>` : '<span class="tag bad">Down</span>'}</span></div>`).join("")}</div>
@@ -229,19 +263,60 @@ pages.system = async view => {
 };
 
 /* ---------- router ---------- */
-const titles = { dashboard: "Dashboard", books: "Books", members: "Members", lending: "Lending", fines: "Fines", notifications: "Notifications", system: "System status" };
+const titles = { dashboard: "Dashboard", books: "Books", members: "Members", lending: "Lending", fines: "Fines", notifications: "Notifications", system: "System status",
+  myloans: "My loans", myfines: "My fines", mynotes: "My notifications" };
+const NAV = {
+  LIBRARIAN: [["dashboard", "Dashboard"], ["books", "Books"], ["members", "Members"], ["lending", "Lending"], ["fines", "Fines"], ["notifications", "Notifications"], ["system", "System"]],
+  MEMBER: [["books", "Books"], ["myloans", "My loans"], ["myfines", "My fines"], ["mynotes", "My notifications"]]
+};
+
+function buildNav() {
+  const items = NAV[session.role] || [];
+  $("#nav").innerHTML = items.map(([r, t]) => `<a href="#/${r}" data-r="${r}">${esc(t)}</a>`).join("");
+  $("#who").innerHTML = `<span><b>${esc(session.username)}</b> (${esc(session.role.toLowerCase())})</span><button class="b s" id="logout">Sign out</button>`;
+  $("#logout").onclick = () => { saveSession(null); showLogin(""); };
+}
+
+function showLogin(msg) {
+  $("#loginErr").textContent = msg || "";
+  $("#login").hidden = false;
+  $("#nav").innerHTML = "";
+  $("#who").innerHTML = "";
+  $("#view").innerHTML = "";
+  const f = $("#loginForm").elements.username;
+  if (f) f.focus();
+}
+
+$("#loginForm").onsubmit = async e => {
+  e.preventDefault();
+  const d = Object.fromEntries(new FormData(e.target));
+  try {
+    const res = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(d) });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { $("#loginErr").textContent = data.message || "Sign-in failed"; return; }
+    saveSession(data);
+    e.target.reset();
+    $("#login").hidden = true;
+    buildNav();
+    location.hash = "#/" + NAV[data.role][0][0];
+    route();
+  } catch (err) { $("#loginErr").textContent = "Could not reach the server"; }
+};
 
 async function route() {
-  const name = (location.hash.replace(/^#\//, "") || "dashboard");
-  const page = pages[name] ? name : "dashboard";
-  document.querySelectorAll("#nav a").forEach(a => a.classList.toggle("on", a.dataset.r === page));
-  $("#title").textContent = titles[page];
+  if (!session) { showLogin(""); return; }
+  const allowed = (NAV[session.role] || []).map(x => x[0]);
+  let name = location.hash.replace(/^#\//, "") || allowed[0];
+  if (!allowed.includes(name) || !pages[name]) name = allowed[0];
+  document.querySelectorAll("#nav a").forEach(a => a.classList.toggle("on", a.dataset.r === name));
+  $("#title").textContent = titles[name];
   $("#side").classList.remove("open");
   const view = $("#view");
   view.innerHTML = `<div class="empty">Loading...</div>`;
-  try { await pages[page](view); }
+  try { await pages[name](view); }
   catch (e) { view.innerHTML = `<div class="panel"><span class="tag bad">Error</span> ${esc(e.message)}</div>`; }
 }
 $("#menu").onclick = () => $("#side").classList.toggle("open");
 window.addEventListener("hashchange", route);
+if (session) { $("#login").hidden = true; buildNav(); }
 route();

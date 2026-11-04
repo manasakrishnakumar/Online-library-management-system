@@ -1,0 +1,38 @@
+[
+ {
+  "workers": 1,
+  "requests": 987,
+  "errors": 0,
+  "rps": 164.5
+ },
+ {
+  "workers": 2,
+  "requests": 1728,
+  "errors": 0,
+  "rps": 288.0
+ },
+ {
+  "workers": 4,
+  "requests": 2856,
+  "errors": 0,
+  "rps": 476.0
+ },
+ {
+  "workers": 8,
+  "requests": 3389,
+  "errors": 0,
+  "rps": 564.8333333333334
+ },
+ {
+  "workers": 16,
+  "requests": 3675,
+  "errors": 0,
+  "rps": 612.5
+ },
+ {
+  "workers": 32,
+  "requests": 3662,
+  "errors": 0,
+  "rps": 610.3333333333334
+ }
+]

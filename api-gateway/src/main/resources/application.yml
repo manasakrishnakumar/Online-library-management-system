@@ -46,4 +46,14 @@ management:
   endpoints:
     web:
       exposure:
-        include: health,info,gateway
+        include: health,info,gateway,prometheus
+library:
+  security:
+    # Demo accounts. The secret and passwords are placeholders for local use; real deployments inject them as secrets.
+    jwt-secret: ${JWT_SECRET:library-demo-secret-library-demo-secret-2026}
+    token-minutes: 60
+    users:
+      - { username: librarian, password: librarian123, role: LIBRARIAN }
+      - { username: asha.rao@example.com, password: member123, role: MEMBER, member-id: 1 }
+      - { username: ravi.kumar@example.com, password: member123, role: MEMBER, member-id: 2 }
+      - { username: priya.nair@example.com, password: member123, role: MEMBER, member-id: 3 }

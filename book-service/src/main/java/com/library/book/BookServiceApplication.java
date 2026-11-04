@@ -11,6 +11,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.http.HttpStatus;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -68,6 +69,18 @@ class Book {
     public void setAvailableCopies(int availableCopies) { this.availableCopies = availableCopies; }
 }
 
+/** Remembers which stock operations were already applied, so retries by the lending saga never change stock twice. */
+@Entity
+class StockOp {
+    @Id private String opKey;
+    private Long bookId;
+
+    protected StockOp() {}
+    StockOp(String opKey, Long bookId) { this.opKey = opKey; this.bookId = bookId; }
+}
+
+interface StockOpRepository extends JpaRepository<StockOp, String> {}
+
 interface BookRepository extends JpaRepository<Book, Long> {
     List<Book> findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(String title, String author);
 }
@@ -76,8 +89,9 @@ interface BookRepository extends JpaRepository<Book, Long> {
 @RequestMapping("/api/books")
 class BookController {
     private final BookRepository repo;
+    private final StockOpRepository ops;
 
-    BookController(BookRepository repo) { this.repo = repo; }
+    BookController(BookRepository repo, StockOpRepository ops) { this.repo = repo; this.ops = ops; }
 
     @GetMapping
     List<Book> all() { return repo.findAll(); }
@@ -109,20 +123,24 @@ class BookController {
     @DeleteMapping("/{id}") @ResponseStatus(HttpStatus.NO_CONTENT)
     void delete(@PathVariable Long id) { repo.delete(find(id)); }
 
-    /** Called by lending-service when a book is issued. */
-    @PutMapping("/{id}/borrow")
-    Book borrow(@PathVariable Long id) {
+    /** Called by the lending saga when a book is issued. A repeated Idempotency-Key is a no-op. */
+    @PutMapping("/{id}/borrow") @Transactional
+    Book borrow(@PathVariable Long id, @RequestHeader(value = "Idempotency-Key", required = false) String key) {
         Book b = find(id);
+        if (key != null && ops.existsById(key)) return b;
         if (b.getAvailableCopies() < 1) throw new ResponseStatusException(HttpStatus.CONFLICT, "No copies available");
         b.setAvailableCopies(b.getAvailableCopies() - 1);
+        if (key != null) ops.save(new StockOp(key, id));
         return repo.save(b);
     }
 
-    /** Called by lending-service when a book is returned. */
-    @PutMapping("/{id}/return")
-    Book giveBack(@PathVariable Long id) {
+    /** Called by the lending saga when a book is returned or a borrow has to be compensated. */
+    @PutMapping("/{id}/return") @Transactional
+    Book giveBack(@PathVariable Long id, @RequestHeader(value = "Idempotency-Key", required = false) String key) {
         Book b = find(id);
+        if (key != null && ops.existsById(key)) return b;
         if (b.getAvailableCopies() < b.getTotalCopies()) b.setAvailableCopies(b.getAvailableCopies() + 1);
+        if (key != null) ops.save(new StockOp(key, id));
         return repo.save(b);
     }
 

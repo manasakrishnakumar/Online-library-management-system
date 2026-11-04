@@ -10,24 +10,27 @@
 <div class="app">
   <aside class="side" id="side">
     <div class="brand"><span class="logo">&#128216;</span><div><strong>Online Library</strong><small>Management System</small></div></div>
-    <nav id="nav">
-      <a href="#/dashboard" data-r="dashboard">Dashboard</a>
-      <a href="#/books" data-r="books">Books</a>
-      <a href="#/members" data-r="members">Members</a>
-      <a href="#/lending" data-r="lending">Lending</a>
-      <a href="#/fines" data-r="fines">Fines</a>
-      <a href="#/notifications" data-r="notifications">Notifications</a>
-      <a href="#/system" data-r="system">System</a>
-    </nav>
+    <nav id="nav"></nav>
     <div class="foot">Microservices &middot; IS373TA</div>
   </aside>
   <div class="main">
     <header class="top">
       <button id="menu" class="icon" aria-label="Menu">&#9776;</button>
       <h1 id="title"></h1>
+      <div id="who" class="who"></div>
     </header>
     <main id="view"></main>
   </div>
+</div>
+<div id="login" class="modal loginwrap" hidden>
+  <form class="sheet" id="loginForm">
+    <h2>Sign in</h2>
+    <label>Username<input name="username" autocomplete="username" required></label>
+    <label>Password<input name="password" type="password" autocomplete="current-password" required></label>
+    <div id="loginErr" class="loginerr"></div>
+    <div class="row"><button class="b p">Sign in</button></div>
+    <p class="hint">Demo accounts: <b>librarian</b> / librarian123 (full access), or <b>asha.rao@example.com</b> / member123 (member view).</p>
+  </form>
 </div>
 <div id="modal" class="modal" hidden><div class="sheet" id="sheet"></div></div>
 <div id="toasts"></div>

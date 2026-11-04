@@ -3,6 +3,81 @@ kind: Namespace
 metadata:
   name: library
 ---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: library-secrets
+  namespace: library
+type: Opaque
+stringData:
+  jwt-secret: library-demo-secret-library-demo-secret-2026   # demo value: replace before real use
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init
+  namespace: library
+data:
+  init.sql: |
+    -- One database and one login per microservice (database-per-service).
+    -- Demo credentials only; real deployments would inject secrets.
+    CREATE USER bookuser PASSWORD 'book123';
+    CREATE DATABASE bookdb OWNER bookuser;
+    CREATE USER memberuser PASSWORD 'member123';
+    CREATE DATABASE memberdb OWNER memberuser;
+    CREATE USER lendinguser PASSWORD 'lending123';
+    CREATE DATABASE lendingdb OWNER lendinguser;
+    CREATE USER fineuser PASSWORD 'fine123';
+    CREATE DATABASE finedb OWNER fineuser;
+    CREATE USER notificationuser PASSWORD 'notification123';
+    CREATE DATABASE notificationdb OWNER notificationuser;
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: library
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: postgres}
+  template:
+    metadata:
+      labels: {app: postgres}
+    spec:
+      containers:
+      - name: postgres
+        image: postgres:16-alpine
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 5432
+        env:
+        - {name: POSTGRES_PASSWORD, value: "postgres"}
+        volumeMounts:
+        - {name: init, mountPath: /docker-entrypoint-initdb.d}
+        - {name: data, mountPath: /var/lib/postgresql/data}
+        readinessProbe:
+          tcpSocket: {port: 5432}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+      volumes:
+      - name: init
+        configMap: {name: postgres-init}
+      - name: data
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres
+  namespace: library
+spec:
+  selector:
+    app: postgres
+  ports:
+  - port: 5432
+    targetPort: 5432
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -38,6 +113,42 @@ spec:
   ports:
   - port: 5672
     targetPort: 5672
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: zipkin
+  namespace: library
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: zipkin}
+  template:
+    metadata:
+      labels: {app: zipkin}
+    spec:
+      containers:
+      - name: zipkin
+        image: openzipkin/zipkin:3
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 9411
+        readinessProbe:
+          tcpSocket: {port: 9411}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: zipkin
+  namespace: library
+spec:
+  selector:
+    app: zipkin
+  ports:
+  - port: 9411
+    targetPort: 9411
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -133,6 +244,10 @@ spec:
         env:
         - {name: CONFIG_URL, value: "http://config-server:8888"}
         - {name: EUREKA_URL, value: "http://discovery-server:8761/eureka"}
+        - {name: ZIPKIN_URL, value: "http://zipkin:9411/api/v2/spans"}
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef: {name: library-secrets, key: jwt-secret}
         readinessProbe:
           tcpSocket: {port: 8080}
           initialDelaySeconds: 30
@@ -172,6 +287,10 @@ spec:
         env:
         - {name: CONFIG_URL, value: "http://config-server:8888"}
         - {name: EUREKA_URL, value: "http://discovery-server:8761/eureka"}
+        - {name: ZIPKIN_URL, value: "http://zipkin:9411/api/v2/spans"}
+        - {name: SPRING_DATASOURCE_URL, value: "jdbc:postgresql://postgres:5432/bookdb"}
+        - {name: SPRING_DATASOURCE_USERNAME, value: "bookuser"}
+        - {name: SPRING_DATASOURCE_PASSWORD, value: "book123"}
         readinessProbe:
           tcpSocket: {port: 8081}
           initialDelaySeconds: 30
@@ -211,6 +330,10 @@ spec:
         env:
         - {name: CONFIG_URL, value: "http://config-server:8888"}
         - {name: EUREKA_URL, value: "http://discovery-server:8761/eureka"}
+        - {name: ZIPKIN_URL, value: "http://zipkin:9411/api/v2/spans"}
+        - {name: SPRING_DATASOURCE_URL, value: "jdbc:postgresql://postgres:5432/memberdb"}
+        - {name: SPRING_DATASOURCE_USERNAME, value: "memberuser"}
+        - {name: SPRING_DATASOURCE_PASSWORD, value: "member123"}
         readinessProbe:
           tcpSocket: {port: 8082}
           initialDelaySeconds: 30
@@ -250,7 +373,11 @@ spec:
         env:
         - {name: CONFIG_URL, value: "http://config-server:8888"}
         - {name: EUREKA_URL, value: "http://discovery-server:8761/eureka"}
+        - {name: ZIPKIN_URL, value: "http://zipkin:9411/api/v2/spans"}
         - {name: SPRING_RABBITMQ_HOST, value: "rabbitmq"}
+        - {name: SPRING_DATASOURCE_URL, value: "jdbc:postgresql://postgres:5432/lendingdb"}
+        - {name: SPRING_DATASOURCE_USERNAME, value: "lendinguser"}
+        - {name: SPRING_DATASOURCE_PASSWORD, value: "lending123"}
         readinessProbe:
           tcpSocket: {port: 8083}
           initialDelaySeconds: 30
@@ -290,7 +417,11 @@ spec:
         env:
         - {name: CONFIG_URL, value: "http://config-server:8888"}
         - {name: EUREKA_URL, value: "http://discovery-server:8761/eureka"}
+        - {name: ZIPKIN_URL, value: "http://zipkin:9411/api/v2/spans"}
         - {name: SPRING_RABBITMQ_HOST, value: "rabbitmq"}
+        - {name: SPRING_DATASOURCE_URL, value: "jdbc:postgresql://postgres:5432/finedb"}
+        - {name: SPRING_DATASOURCE_USERNAME, value: "fineuser"}
+        - {name: SPRING_DATASOURCE_PASSWORD, value: "fine123"}
         readinessProbe:
           tcpSocket: {port: 8084}
           initialDelaySeconds: 30
@@ -330,7 +461,11 @@ spec:
         env:
         - {name: CONFIG_URL, value: "http://config-server:8888"}
         - {name: EUREKA_URL, value: "http://discovery-server:8761/eureka"}
+        - {name: ZIPKIN_URL, value: "http://zipkin:9411/api/v2/spans"}
         - {name: SPRING_RABBITMQ_HOST, value: "rabbitmq"}
+        - {name: SPRING_DATASOURCE_URL, value: "jdbc:postgresql://postgres:5432/notificationdb"}
+        - {name: SPRING_DATASOURCE_USERNAME, value: "notificationuser"}
+        - {name: SPRING_DATASOURCE_PASSWORD, value: "notification123"}
         readinessProbe:
           tcpSocket: {port: 8085}
           initialDelaySeconds: 30

@@ -1,0 +1,11 @@
+{
+ "config-server": 70,
+ "discovery-server": 31,
+ "api-gateway": 278,
+ "book-service": 178,
+ "member-service": 118,
+ "lending-service": 534,
+ "fine-service": 226,
+ "notification-service": 139,
+ "frontend": 443
+}

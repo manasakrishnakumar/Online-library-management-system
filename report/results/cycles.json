@@ -1,0 +1,272 @@
+[
+ {
+  "loan": 9,
+  "issue_ms": 112.43749991990626,
+  "return_ms": 39.68759998679161,
+  "fine_visible_ms": 317.0778000494465,
+  "notification_visible_ms": 334.4059999799356,
+  "events": 3,
+  "status": "RETURNED"
+ },
+ {
+  "loan": 10,
+  "issue_ms": 92.87189994938672,
+  "return_ms": 37.68619999755174,
+  "fine_visible_ms": 170.15550006181002,
+  "notification_visible_ms": 185.1267000893131,
+  "events": 3,
+  "status": "RETURNED"
+ },
+ {
+  "loan": 11,
+  "issue_ms": 87.18549995683134,
+  "return_ms": 39.808900095522404,
+  "fine_visible_ms": 159.10039993468672,
+  "notification_visible_ms": 170.6244999077171,
+  "events": 3,
+  "status": "RETURNED"
+ },
+ {
+  "loan": 12,
+  "issue_ms": 76.66410005185753,
+  "return_ms": 26.51459991466254,
+  "fine_visible_ms": 180.17549999058247,
+  "notification_visible_ms": 217.21150004304945,
+  "events": 3,
+  "status": "RETURNED"
+ },
+ {
+  "loan": 13,
+  "issue_ms": 84.20719997957349,
+  "return_ms": 31.10330004710704,
+  "fine_visible_ms": 175.96010002307594,
+  "notification_visible_ms": 186.234200024046,
+  "events": 3,
+  "status": "RETURNED"
+ },
+ {
+  "loan": 14,
+  "issue_ms": 80.65910008735955,
+  "return_ms": 31.308199977502227,
+  "fine_visible_ms": 166.20510001666844,
+  "notification_visible_ms": 176.1998999863863,
+  "events": 3,
+  "status": "RETURNED"
+ },
+ {
+  "loan": 15,
+  "issue_ms": 87.03920000698417,
+  "return_ms": 24.63780005928129,
+  "fine_visible_ms": 177.48859990388155,
+  "notification_visible_ms": 188.25609993655235,
+  "events": 3,
+  "status": "RETURNED"
+ },
+ {
+  "loan": 16,
+  "issue_ms": 85.27679997496307,
+  "return_ms": 27.800400042906404,
+  "fine_visible_ms": 200.00870001967996,
+  "notification_visible_ms": 209.73820006474853,
+  "events": 3,
+  "status": "RETURNED"
+ },
+ {
+  "loan": 17,
+  "issue_ms": 77.89949991274625,
+  "return_ms": 28.12540007289499,
+  "fine_visible_ms": 186.46360002458096,
+  "notification_visible_ms": 197.25770002696663,
+  "events": 3,
+  "status": "RETURNED"
+ },
+ {
+  "loan": 18,
+  "issue_ms": 81.43280004151165,
+  "return_ms": 29.45089992135763,
+  "fine_visible_ms": 190.85949996951967,
+  "notification_visible_ms": 200.0240000197664,
+  "events": 3,
+  "status": "RETURNED"
+ },
+ {
+  "loan": 19,
+  "issue_ms": 97.41570008918643,
+  "return_ms": 27.578099980019033,
+  "fine_visible_ms": 152.92569994926453,
+  "notification_visible_ms": 162.03370003495365,
+  "events": 3,
+  "status": "RETURNED"
+ },
+ {
+  "loan": 20,
+  "issue_ms": 77.60979991871864,
+  "return_ms": 32.507200026884675,
+  "fine_visible_ms": 223.32360001746565,
+  "notification_visible_ms": 232.505299965851,
+  "events": 3,
+  "status": "RETURNED"
+ },
+ {
+  "loan": 21,
+  "issue_ms": 76.35899994056672,
+  "return_ms": 28.69700000155717,
+  "fine_visible_ms": 166.75149998627603,
+  "notification_visible_ms": 176.03470000904053,
+  "events": 3,
+  "status": "RETURNED"
+ },
+ {
+  "loan": 22,
+  "issue_ms": 78.62919999752194,
+  "return_ms": 23.61989999189973,
+  "fine_visible_ms": 214.74560000933707,
+  "notification_visible_ms": 222.8407000657171,
+  "events": 3,
+  "status": "RETURNED"
+ },
+ {
+  "loan": 23,
+  "issue_ms": 77.49719999264926,
+  "return_ms": 22.433600039221346,
+  "fine_visible_ms": 178.16460004542023,
+  "notification_visible_ms": 186.58350000623614,
+  "events": 3,
+  "status": "RETURNED"
+ },
+ {
+  "loan": 24,
+  "issue_ms": 75.71320002898574,
+  "return_ms": 25.358499959111214,
+  "fine_visible_ms": 197.1669999184087,
+  "notification_visible_ms": 205.65759995952249,
+  "events": 3,
+  "status": "RETURNED"
+ },
+ {
+  "loan": 25,
+  "issue_ms": 74.53810004517436,
+  "return_ms": 25.71750001516193,
+  "fine_visible_ms": 201.98870007880032,
+  "notification_visible_ms": 210.5919000459835,
+  "events": 3,
+  "status": "RETURNED"
+ },
+ {
+  "loan": 26,
+  "issue_ms": 77.48890004586428,
+  "return_ms": 24.311400018632412,
+  "fine_visible_ms": 200.87509998120368,
+  "notification_visible_ms": 208.79249996505678,
+  "events": 3,
+  "status": "RETURNED"
+ },
+ {
+  "loan": 27,
+  "issue_ms": 72.7095000911504,
+  "return_ms": 26.33249992504716,
+  "fine_visible_ms": 202.97570002730936,
+  "notification_visible_ms": 212.73889997974038,
+  "events": 3,
+  "status": "RETURNED"
+ },
+ {
+  "loan": 28,
+  "issue_ms": 77.68049999140203,
+  "return_ms": 23.52189994417131,
+  "fine_visible_ms": 185.91459991876036,
+  "notification_visible_ms": 193.94379993900657,
+  "events": 3,
+  "status": "RETURNED"
+ },
+ {
+  "loan": 29,
+  "issue_ms": 76.64409989956766,
+  "return_ms": 25.716700009070337,
+  "fine_visible_ms": 206.1176000861451,
+  "notification_visible_ms": 214.35060002841055,
+  "events": 3,
+  "status": "RETURNED"
+ },
+ {
+  "loan": 30,
+  "issue_ms": 77.789600007236,
+  "return_ms": 28.018200071528554,
+  "fine_visible_ms": 152.67250000033528,
+  "notification_visible_ms": 184.85359998885542,
+  "events": 3,
+  "status": "RETURNED"
+ },
+ {
+  "loan": 31,
+  "issue_ms": 81.45569998305291,
+  "return_ms": 27.505100006237626,
+  "fine_visible_ms": 171.84770002495497,
+  "notification_visible_ms": 184.99169999267906,
+  "events": 3,
+  "status": "RETURNED"
+ },
+ {
+  "loan": 32,
+  "issue_ms": 77.72210007533431,
+  "return_ms": 24.966800003312528,
+  "fine_visible_ms": 176.0208000196144,
+  "notification_visible_ms": 208.35960004478693,
+  "events": 3,
+  "status": "RETURNED"
+ },
+ {
+  "loan": 33,
+  "issue_ms": 78.54080002289265,
+  "return_ms": 31.050299992784858,
+  "fine_visible_ms": 150.441600009799,
+  "notification_visible_ms": 159.3338999664411,
+  "events": 3,
+  "status": "RETURNED"
+ },
+ {
+  "loan": 34,
+  "issue_ms": 80.88720007799566,
+  "return_ms": 24.20049998909235,
+  "fine_visible_ms": 190.27849996928126,
+  "notification_visible_ms": 201.30189997144043,
+  "events": 3,
+  "status": "RETURNED"
+ },
+ {
+  "loan": 35,
+  "issue_ms": 79.14899999741465,
+  "return_ms": 22.91419997345656,
+  "fine_visible_ms": 197.77349999640137,
+  "notification_visible_ms": 205.99960000254214,
+  "events": 3,
+  "status": "RETURNED"
+ },
+ {
+  "loan": 36,
+  "issue_ms": 72.58329994510859,
+  "return_ms": 22.542400052770972,
+  "fine_visible_ms": 190.04550005774945,
+  "notification_visible_ms": 199.75310005247593,
+  "events": 3,
+  "status": "RETURNED"
+ },
+ {
+  "loan": 37,
+  "issue_ms": 72.2125000320375,
+  "return_ms": 22.64039998408407,
+  "fine_visible_ms": 217.5264999968931,
+  "notification_visible_ms": 225.23680003359914,
+  "events": 3,
+  "status": "RETURNED"
+ },
+ {
+  "loan": 38,
+  "issue_ms": 74.08630009740591,
+  "return_ms": 23.23170006275177,
+  "fine_visible_ms": 162.70410001743585,
+  "notification_visible_ms": 171.83640005532652,
+  "events": 3,
+  "status": "RETURNED"
+ }
+]

@@ -12,7 +12,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 class LoanReturnedListenerTest {
     private final FineRepository fines = mock(FineRepository.class);
     private final RabbitTemplate rabbit = mock(RabbitTemplate.class);
-    private final LoanReturnedListener listener = new LoanReturnedListener(fines, rabbit, new ObjectMapper(), 2.0);
+    private final LoanReturnedListener listener = new LoanReturnedListener(fines, rabbit, new ObjectMapper(), new io.micrometer.core.instrument.simple.SimpleMeterRegistry(), 2.0);
 
     private String event(String due, String returned) {
         return "{\"loanId\":1,\"memberId\":2,\"memberName\":\"Asha\",\"bookTitle\":\"Book\",\"dueDate\":\"" + due + "\",\"returnDate\":\"" + returned + "\"}";
@@ -25,7 +25,7 @@ class LoanReturnedListenerTest {
         verify(fines).save(captor.capture());
         assertEquals(4, captor.getValue().getDaysOverdue());
         assertEquals(0, captor.getValue().getAmount().compareTo(new java.math.BigDecimal("8")));
-        verify(rabbit).convertAndSend(eq("library.events"), eq("fine.assessed"), any(Object.class));
+        verify(rabbit).convertAndSend(eq("library.events"), eq("fine.assessed"), any(Object.class), any(org.springframework.amqp.core.MessagePostProcessor.class));
     }
 
     @Test

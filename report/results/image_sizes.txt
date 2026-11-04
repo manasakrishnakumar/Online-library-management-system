@@ -1,0 +1,14 @@
+librarymanagement-lending-service|593MB
+librarymanagement-api-gateway|526MB
+librarymanagement-fine-service|593MB
+librarymanagement-book-service|586MB
+librarymanagement-discovery-server|531MB
+librarymanagement-notification-service|590MB
+librarymanagement-member-service|586MB
+librarymanagement-config-server|508MB
+librarymanagement-frontend|73.7MB
+postgres|420MB
+openzipkin/zipkin|393MB
+rabbitmq|277MB
+grafana/grafana|604MB
+prom/prometheus|380MB

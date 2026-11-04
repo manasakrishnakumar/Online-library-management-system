@@ -1,0 +1,8 @@
+config-server|Started ConfigServerApplication in 7.218 seconds
+discovery-server|Started DiscoveryServerApplication in 8.274 seconds
+api-gateway|Started ApiGatewayApplication in 20.387 seconds
+book-service|Started BookServiceApplication in 26.996 seconds
+member-service|Started MemberServiceApplication in 26.565 seconds
+lending-service|Started LendingServiceApplication in 33.772 seconds
+fine-service|Started FineServiceApplication in 33.026 seconds
+notification-service|Started NotificationServiceApplication in 29.253 seconds

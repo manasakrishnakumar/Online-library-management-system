@@ -1,0 +1,14 @@
+librarymanagement-frontend-1|15.98MiB / 11.33GiB|0.00%
+librarymanagement-lending-service-1|512.2MiB / 11.33GiB|2.07%
+librarymanagement-member-service-1|411.5MiB / 11.33GiB|0.19%
+librarymanagement-api-gateway-1|400.2MiB / 11.33GiB|7.91%
+librarymanagement-fine-service-1|452.2MiB / 11.33GiB|1.09%
+librarymanagement-book-service-1|409.9MiB / 11.33GiB|0.19%
+librarymanagement-notification-service-1|409.4MiB / 11.33GiB|0.19%
+librarymanagement-discovery-server-1|368.6MiB / 11.33GiB|1.17%
+librarymanagement-grafana-1|50.03MiB / 11.33GiB|0.17%
+librarymanagement-postgres-1|131.4MiB / 11.33GiB|6.06%
+librarymanagement-rabbitmq-1|139.7MiB / 11.33GiB|0.69%
+librarymanagement-config-server-1|299.2MiB / 11.33GiB|5.02%
+librarymanagement-prometheus-1|45.23MiB / 11.33GiB|0.24%
+librarymanagement-zipkin-1|291.9MiB / 11.33GiB|1.43%

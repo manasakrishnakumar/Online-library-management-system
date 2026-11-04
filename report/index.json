@@ -1,0 +1,754 @@
+{
+"headings": [
+[
+"h2",
+"CHAPTER 1:  INTRODUCTION"
+],
+[
+"h3",
+"1.1  Terminology"
+],
+[
+"h3",
+"1.2  Scope and Relevance"
+],
+[
+"h3",
+"1.3  Motivation"
+],
+[
+"h3",
+"1.4  Problem Statement"
+],
+[
+"h3",
+"1.5  Objectives"
+],
+[
+"h3",
+"1.6  Report Organisation"
+],
+[
+"h3",
+"1.7  Summary"
+],
+[
+"h2",
+"CHAPTER 2:  LITERATURE SURVEY"
+],
+[
+"h3",
+"2.1  Literature Review"
+],
+[
+"h5",
+"2.1.1  Foundations of microservices"
+],
+[
+"h5",
+"2.1.2  Finding service boundaries"
+],
+[
+"h5",
+"2.1.3  Data ownership, consistency and events"
+],
+[
+"h5",
+"2.1.4  Resilience"
+],
+[
+"h5",
+"2.1.5  Security at the edge"
+],
+[
+"h5",
+"2.1.6  Observability"
+],
+[
+"h5",
+"2.1.7  Organisation and deployment"
+],
+[
+"h3",
+"2.2  Summary of the Reviewed Works"
+],
+[
+"h3",
+"2.3  Research Gap and Positioning"
+],
+[
+"h3",
+"2.4  Summary"
+],
+[
+"h2",
+"CHAPTER 3:  SOFTWARE REQUIREMENTS SPECIFICATION"
+],
+[
+"h3",
+"3.1  Functional Requirements"
+],
+[
+"h3",
+"3.2  Non-Functional Requirements"
+],
+[
+"h3",
+"3.3  Hardware Requirements"
+],
+[
+"h3",
+"3.4  Software Requirements"
+],
+[
+"h3",
+"3.5  Summary"
+],
+[
+"h2",
+"CHAPTER 4:  DESIGN OF THE SYSTEM"
+],
+[
+"h3",
+"4.1  Theory and Concepts"
+],
+[
+"h5",
+"4.1.1  Microservices and bounded contexts"
+],
+[
+"h5",
+"4.1.2  The SEED(S) process"
+],
+[
+"h5",
+"4.1.3  Data ownership, sagas and the outbox"
+],
+[
+"h5",
+"4.1.4  Gateway, registry and configuration"
+],
+[
+"h5",
+"4.1.5  Circuit breaker, timeouts and idempotency"
+],
+[
+"h5",
+"4.1.6  JSON Web Tokens"
+],
+[
+"h5",
+"4.1.7  Containers and orchestration"
+],
+[
+"h5",
+"4.1.8  Observability"
+],
+[
+"h3",
+"4.2  Dataset Description"
+],
+[
+"h3",
+"4.3  Design and Methodology"
+],
+[
+"h5",
+"4.3.1  Operating model and team topology"
+],
+[
+"h5",
+"4.3.2  Actors and jobs to be done"
+],
+[
+"h5",
+"4.3.3  Interaction pattern"
+],
+[
+"h5",
+"4.3.4  Actions and queries"
+],
+[
+"h5",
+"4.3.5  Event storming and service boundaries"
+],
+[
+"h5",
+"4.3.6  Sizing"
+],
+[
+"h3",
+"4.4  System Architecture"
+],
+[
+"h5",
+"4.4.1  Overview"
+],
+[
+"h5",
+"4.4.2  Data model"
+],
+[
+"h5",
+"4.4.3  Saga and outbox"
+],
+[
+"h5",
+"4.4.4  Security design"
+],
+[
+"h5",
+"4.4.5  Observability design"
+],
+[
+"h5",
+"4.4.6  Deployment"
+],
+[
+"h3",
+"4.5  Tools and APIs"
+],
+[
+"h3",
+"4.6  Summary"
+],
+[
+"h2",
+"CHAPTER 5:  IMPLEMENTATION AND TESTING"
+],
+[
+"h3",
+"5.1  Implementation Requirements"
+],
+[
+"h3",
+"5.2  Implementation Tool Features"
+],
+[
+"h3",
+"5.3  Code Snippets with Explanation"
+],
+[
+"h5",
+"5.3.1  The saga step (LendingService.advance)"
+],
+[
+"h5",
+"5.3.2  Remote calls with circuit breaker (RemoteGateway)"
+],
+[
+"h5",
+"5.3.3  Idempotent stock operation (BookController)"
+],
+[
+"h5",
+"5.3.4  Outbox relay"
+],
+[
+"h5",
+"5.3.5  Fine service reacts to a late return"
+],
+[
+"h5",
+"5.3.6  Duplicate-safe notification consumer"
+],
+[
+"h5",
+"5.3.7  Token check at the gateway"
+],
+[
+"h5",
+"5.3.8  Container image and start-up order"
+],
+[
+"h5",
+"5.3.9  A unit test of the compensation"
+],
+[
+"h3",
+"5.4  Testing"
+],
+[
+"h5",
+"5.4.1  Test levels"
+],
+[
+"h5",
+"5.4.2  Unit tests"
+],
+[
+"h5",
+"5.4.3  Live checks"
+],
+[
+"h5",
+"5.4.4  Defects found by testing and how they were fixed"
+],
+[
+"h3",
+"5.5  Summary"
+],
+[
+"h2",
+"CHAPTER 6:  RESULTS AND ANALYSIS"
+],
+[
+"h3",
+"6.1  Results: Functional Verification and Screenshots"
+],
+[
+"h5",
+"6.1.1  Security, isolation and demonstration data"
+],
+[
+"h5",
+"6.1.2  Application pages"
+],
+[
+"h5",
+"6.1.3  Infrastructure consoles"
+],
+[
+"h3",
+"6.2  Benchmarking and Analysis"
+],
+[
+"h5",
+"6.2.1  Method"
+],
+[
+"h5",
+"6.2.2  Latency"
+],
+[
+"h5",
+"6.2.3  Cost of PostgreSQL, login and tracing"
+],
+[
+"h5",
+"6.2.4  Throughput"
+],
+[
+"h5",
+"6.2.5  The event path: from a return to a fine and a notification"
+],
+[
+"h5",
+"6.2.6  Start-up time, memory and image size"
+],
+[
+"h3",
+"6.3  Fault Tolerance and Consistency"
+],
+[
+"h5",
+"6.3.1  Behaviour with the book service stopped, before and after the fixes"
+],
+[
+"h3",
+"6.4  Observability Evidence"
+],
+[
+"h3",
+"6.5  Contributions"
+],
+[
+"h3",
+"6.6  Overall Analysis"
+],
+[
+"h3",
+"6.7  Summary"
+],
+[
+"h2",
+"CHAPTER 7:  CONCLUSION"
+],
+[
+"h3",
+"7.1  Conclusion"
+],
+[
+"h3",
+"7.2  Limitations"
+],
+[
+"h3",
+"7.3  Future Scope"
+],
+[
+"h3",
+"7.4  Summary"
+],
+[
+"h2",
+"REFERENCES (IEEE FORMAT)"
+],
+[
+"h2",
+"APPENDIX A  DATASET SAMPLE"
+],
+[
+"h2",
+"APPENDIX B  API OPERATIONS"
+]
+],
+"captions": [
+[
+"table",
+"Table 1.1  Terminology"
+],
+[
+"table",
+"Table 2.1  Reviewed works and how each is used"
+],
+[
+"table",
+"Table 2.2  Points often left open in tutorial systems, what this project does, and the evidence"
+],
+[
+"table",
+"Table 3.1  Functional requirements"
+],
+[
+"table",
+"Table 3.2  Non-functional requirements and the measured result"
+],
+[
+"table",
+"Table 3.3  Hardware requirements"
+],
+[
+"table",
+"Table 3.4  Software requirements"
+],
+[
+"table",
+"Table 4.1  Properties of the Goodbooks-10k data used as the catalogue"
+],
+[
+"fig",
+"Figure 4.1  Publication years of the books (1900 to 2020, five-year bins)"
+],
+[
+"fig",
+"Figure 4.2  Distribution of the average rating of the 10,000 books"
+],
+[
+"fig",
+"Figure 4.3  The ten authors with the most titles in the catalogue"
+],
+[
+"fig",
+"Figure 4.4  Number of copies per title generated for the catalogue"
+],
+[
+"table",
+"Table 4.2  Team topology"
+],
+[
+"table",
+"Table 4.3  Actors and jobs"
+],
+[
+"fig",
+"Figure 4.5  Sequence of issuing a book (steps over REST in blue, replies in green, events in red)"
+],
+[
+"table",
+"Table 4.4  Bounded contexts, services and the data they own"
+],
+[
+"table",
+"Table 4.5  Size of each module"
+],
+[
+"fig",
+"Figure 4.6  Size of each module"
+],
+[
+"fig",
+"Figure 4.7  Architecture of the Online Library Management System"
+],
+[
+"fig",
+"Figure 4.8  Databases and tables of the five business services"
+],
+[
+"fig",
+"Figure 4.9  Issue saga with its failure paths"
+],
+[
+"table",
+"Table 4.6  Role rules enforced by the gateway"
+],
+[
+"fig",
+"Figure 4.10  Containers started by Docker Compose"
+],
+[
+"table",
+"Table 4.7  Kubernetes objects in k8s/library.yaml"
+],
+[
+"table",
+"Table 4.8  Tools used"
+],
+[
+"table",
+"Table 4.9  Routes of the API gateway"
+],
+[
+"table",
+"Table 5.1  Modules of the implementation"
+],
+[
+"code",
+"Listing 5.1  LendingService.advance: saga steps 2 and 3 with compensation"
+],
+[
+"code",
+"Listing 5.2  Remote calls wrapped by circuit breakers with fallbacks"
+],
+[
+"code",
+"Listing 5.3  Borrow with an idempotency key"
+],
+[
+"code",
+"Listing 5.4  OutboxRelay.relay"
+],
+[
+"code",
+"Listing 5.5  LoanReturnedListener.onReturned"
+],
+[
+"code",
+"Listing 5.6  EventConsumer.onEvent: ignoring a message id that was already stored"
+],
+[
+"code",
+"Listing 5.7  AuthFilter: token verification and role check"
+],
+[
+"code",
+"Listing 5.8  AccessRules.allowed"
+],
+[
+"code",
+"Listing 5.9  Multi-stage Dockerfile used for every Java module"
+],
+[
+"code",
+"Listing 5.10  Compose definition of the lending service"
+],
+[
+"code",
+"Listing 5.11  Unit test of the compensating step"
+],
+[
+"table",
+"Table 5.2  Test levels"
+],
+[
+"table",
+"Table 5.3  Unit tests (all passed)"
+],
+[
+"table",
+"Table 5.4  Defects found and fixed"
+],
+[
+"table",
+"Table 6.1  Live checks of security, isolation and demonstration data"
+],
+[
+"fig",
+"Figure 6.1  Login page of the web application"
+],
+[
+"fig",
+"Figure 6.2  Librarian dashboard with counts taken from four services"
+],
+[
+"fig",
+"Figure 6.3  Books page: the Goodbooks-10k catalogue with availability per title (librarian view)"
+],
+[
+"fig",
+"Figure 6.4  Lending page with overdue, issued and returned loans"
+],
+[
+"fig",
+"Figure 6.5  History of loan 6: the event log of the saga"
+],
+[
+"fig",
+"Figure 6.6  Fines created automatically from late returns"
+],
+[
+"fig",
+"Figure 6.7  Notifications created from events by notification-service"
+],
+[
+"fig",
+"Figure 6.8  Members page"
+],
+[
+"fig",
+"Figure 6.9  System status: every service checked through the gateway"
+],
+[
+"fig",
+"Figure 6.10  Member view: the catalogue without add, edit or delete"
+],
+[
+"fig",
+"Figure 6.11  Member view: own loans only"
+],
+[
+"fig",
+"Figure 6.12  Member view: own notifications only"
+],
+[
+"fig",
+"Figure 6.13  Eureka registry showing the registered services"
+],
+[
+"fig",
+"Figure 6.14  Swagger UI of the lending service generated from the code"
+],
+[
+"fig",
+"Figure 6.15  RabbitMQ queues fine.loan-returned and notification.all-events"
+],
+[
+"table",
+"Table 6.2  Latency of read requests in the final system"
+],
+[
+"fig",
+"Figure 6.16  Median and 95th-percentile latency through the gateway"
+],
+[
+"fig",
+"Figure 6.17  Median latency before and after PostgreSQL, JWT and tracing"
+],
+[
+"table",
+"Table 6.3  Throughput of GET /api/books/1 through the gateway"
+],
+[
+"fig",
+"Figure 6.18  Throughput against the number of client threads"
+],
+[
+"table",
+"Table 6.4  Event path of 30 business cycles"
+],
+[
+"fig",
+"Figure 6.19  Delay between the return call and the visible fine and notification"
+],
+[
+"table",
+"Table 6.5  Spring Boot start-up time on a clean start"
+],
+[
+"fig",
+"Figure 6.20  Start-up time of the Java services"
+],
+[
+"table",
+"Table 6.6  Memory of the containers after start-up (docker stats) and image size"
+],
+[
+"fig",
+"Figure 6.21  Idle memory of the containers"
+],
+[
+"table",
+"Table 6.7  Fault-injection experiments"
+],
+[
+"fig",
+"Figure 6.22  Times measured in experiments E1 and E2"
+],
+[
+"fig",
+"Figure 6.23  Response time of issue requests while the book service is stopped (first version and final version)"
+],
+[
+"fig",
+"Figure 6.24  Zipkin: one POST /api/loans/issue across four services"
+],
+[
+"fig",
+"Figure 6.25  Prometheus targets: six of six up"
+],
+[
+"fig",
+"Figure 6.26  Grafana dashboard Online Library: service overview"
+],
+[
+"table",
+"Table A.1  First 15 rows of books.csv"
+],
+[
+"table",
+"Table A.2  Last 8 rows of books.csv"
+],
+[
+"table",
+"Table B.1  Operations of the business services"
+]
+],
+"numbers": {
+"fig:ds_years": "Figure 4.1",
+"fig:ds_ratings": "Figure 4.2",
+"fig:ds_authors": "Figure 4.3",
+"fig:ds_copies": "Figure 4.4",
+"fig:sequence": "Figure 4.5",
+"tab:loc": "Table 4.5",
+"fig:sys_loc": "Figure 4.6",
+"fig:arch": "Figure 4.7",
+"fig:data": "Figure 4.8",
+"fig:saga": "Figure 4.9",
+"tab:roles": "Table 4.6",
+"fig:deploy": "Figure 4.10",
+"tab:k8s": "Table 4.7",
+"tab:live": "Table 6.1",
+"fig:login": "Figure 6.1",
+"fig:dash": "Figure 6.2",
+"fig:books": "Figure 6.3",
+"fig:lending": "Figure 6.4",
+"fig:history": "Figure 6.5",
+"fig:fines": "Figure 6.6",
+"fig:notes": "Figure 6.7",
+"fig:members": "Figure 6.8",
+"fig:system": "Figure 6.9",
+"fig:mbooks": "Figure 6.10",
+"fig:mloans": "Figure 6.11",
+"fig:mnotes": "Figure 6.12",
+"fig:eureka": "Figure 6.13",
+"fig:swagger": "Figure 6.14",
+"fig:rabbit": "Figure 6.15",
+"tab:lat": "Table 6.2",
+"fig:lat": "Figure 6.16",
+"fig:cmp": "Figure 6.17",
+"tab:thr": "Table 6.3",
+"fig:thrfig": "Figure 6.18",
+"tab:evt": "Table 6.4",
+"fig:evtfig": "Figure 6.19",
+"tab:start": "Table 6.5",
+"fig:startfig": "Figure 6.20",
+"tab:mem": "Table 6.6",
+"fig:memfig": "Figure 6.21",
+"tab:exp": "Table 6.7",
+"fig:exptimes": "Figure 6.22",
+"fig:outage": "Figure 6.23",
+"fig:trace": "Figure 6.24",
+"fig:prom": "Figure 6.25",
+"fig:grafana": "Figure 6.26"
+}
+}

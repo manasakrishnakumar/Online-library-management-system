@@ -1,0 +1,70 @@
+{
+ "E1_outbox": {
+  "loans_requested": 5,
+  "http_status": [
+   201,
+   201,
+   201,
+   201,
+   201
+  ],
+  "outbox_pending_during_outage": 5,
+  "seconds_until_outbox_empty_after_broker_restart": 18.2814302444458,
+  "notifications_created": 5
+ },
+ "E2_saga_outage": {
+  "http_status_during_outage": 202,
+  "loan_status_when_accepted": "PENDING",
+  "seconds_to_accept": 2.069209575653076,
+  "seconds_until_issued_after_book_service_restart": 13.374378681182861,
+  "copies_before": 1,
+  "copies_after": 0,
+  "events": [
+   "LOAN_REQUESTED",
+   "BOOK_ISSUED"
+  ]
+ },
+ "E3_rejection": {
+  "first_status": 201,
+  "copies_after_first": 0,
+  "second_status": 409,
+  "second_message": "No copies available",
+  "loan_state": "FAILED",
+  "failure_reason": "No copies available",
+  "copies_after_second": 0,
+  "events": [
+   "LOAN_REQUESTED",
+   "LOAN_FAILED"
+  ]
+ },
+ "E4_idempotency": {
+  "copies_before": 1,
+  "calls_with_same_key": 3,
+  "copies_after": 0,
+  "decrement": 1
+ },
+ "E5_duplicates": {
+  "events_resent": 3,
+  "notifications_before": 22,
+  "notifications_after": 22
+ },
+ "E7_rejections": {
+  "first_status": 201,
+  "rejected_statuses": [
+   409
+  ],
+  "rejected_count": 12,
+  "next_valid_request_status": 201
+ },
+ "E6_trace": {
+  "trace_id": "6aeb8a032d4a3493cb8f4e85eecb9412",
+  "spans": 7,
+  "services": [
+   "api-gateway",
+   "book-service",
+   "lending-service",
+   "member-service"
+  ],
+  "duration_ms": 48.094
+ }
+}

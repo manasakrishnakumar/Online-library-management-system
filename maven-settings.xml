@@ -1,0 +1,10 @@
+<settings>
+  <!-- Mirror of Maven Central used by the Docker build; avoids HTTP 429 rate limits from repo.maven.apache.org -->
+  <mirrors>
+    <mirror>
+      <id>google-central</id>
+      <mirrorOf>central</mirrorOf>
+      <url>https://maven-central.storage-download.googleapis.com/maven2/</url>
+    </mirror>
+  </mirrors>
+</settings>

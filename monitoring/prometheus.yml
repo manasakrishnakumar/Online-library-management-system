@@ -1,0 +1,20 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+
+scrape_configs:
+  - job_name: library
+    metrics_path: /actuator/prometheus
+    static_configs:
+      - targets: ["api-gateway:8080"]
+        labels: { service: api-gateway }
+      - targets: ["book-service:8081"]
+        labels: { service: book-service }
+      - targets: ["member-service:8082"]
+        labels: { service: member-service }
+      - targets: ["lending-service:8083"]
+        labels: { service: lending-service }
+      - targets: ["fine-service:8084"]
+        labels: { service: fine-service }
+      - targets: ["notification-service:8085"]
+        labels: { service: notification-service }

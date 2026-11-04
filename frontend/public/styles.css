@@ -45,7 +45,8 @@ button.s { padding:4px 10px; font-size:13px; }
 table { width:100%; border-collapse:collapse; }
 th, td { text-align:left; padding:10px 8px; border-bottom:1px solid var(--line); white-space:nowrap; }
 th { font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(--mute); }
-td.act { text-align:right; }
+td.w { white-space:normal; min-width:160px; max-width:340px; }
+td.act { white-space:normal; min-width:190px; text-align:right; }
 td.act button { margin-left:6px; }
 .empty { color:var(--mute); padding:18px 4px; }
 .tag { display:inline-block; padding:2px 9px; border-radius:99px; font-size:12px; font-weight:600; }
@@ -70,3 +71,9 @@ td.act button { margin-left:6px; }
   .top, main { padding-left:16px; padding-right:16px; }
   .bar input { min-width:0; flex:1 1 100%; }
 }
+
+.who { margin-left:auto; display:flex; gap:10px; align-items:center; color:var(--mute); font-size:13px; }
+.who b { color:var(--ink); }
+.loginwrap { z-index:40; background:var(--bg); }
+.loginerr { color:var(--bad); min-height:20px; font-size:13px; }
+.hint { color:var(--mute); font-size:12px; margin:12px 0 0; }

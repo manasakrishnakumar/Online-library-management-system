@@ -53,10 +53,11 @@ class LoanReturnedListener {
     private final RabbitTemplate rabbit;
     private final ObjectMapper mapper;
     private final BigDecimal perDay;
+    private final io.micrometer.core.instrument.MeterRegistry meters;
 
-    LoanReturnedListener(FineRepository fines, RabbitTemplate rabbit, ObjectMapper mapper,
+    LoanReturnedListener(FineRepository fines, RabbitTemplate rabbit, ObjectMapper mapper, io.micrometer.core.instrument.MeterRegistry meters,
                          @Value("${library.fine-per-day:2.0}") double perDay) {
-        this.fines = fines; this.rabbit = rabbit; this.mapper = mapper; this.perDay = BigDecimal.valueOf(perDay);
+        this.fines = fines; this.rabbit = rabbit; this.mapper = mapper; this.meters = meters; this.perDay = BigDecimal.valueOf(perDay);
     }
 
     @RabbitListener(queues = "fine.loan-returned")
@@ -75,7 +76,12 @@ class LoanReturnedListener {
         out.put("bookTitle", n.get("bookTitle").asText());
         out.put("daysOverdue", days);
         out.put("amount", amount);
-        rabbit.convertAndSend("library.events", "fine.assessed", mapper.writeValueAsString(out));
+        rabbit.convertAndSend("library.events", "fine.assessed", mapper.writeValueAsString(out), m -> {
+            m.getMessageProperties().setMessageId("fine-" + loanId);
+            return m;
+        });
+        meters.counter("library.fines.assessed").increment();
+        meters.counter("library.fines.amount").increment(amount.doubleValue());
     }
 }
 

@@ -1,18 +1,76 @@
 # Run everything: docker compose up --build
+# Reset all data:  docker compose down -v
+x-build: &build
+  context: .
+
+x-app-env: &app-env
+  CONFIG_URL: http://config-server:8888
+  EUREKA_URL: http://discovery-server:8761/eureka
+  ZIPKIN_URL: http://zipkin:9411/api/v2/spans
+
+x-app-deps: &app-deps
+  config-server:
+    condition: service_healthy
+  discovery-server:
+    condition: service_healthy
+  postgres:
+    condition: service_healthy
+
 services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
   rabbitmq:
     image: rabbitmq:3.13-management-alpine
     ports:
-      - "5672:5672"
+      - "127.0.0.1:5672:5672"
       - "15672:15672"
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
       interval: 8s
       timeout: 5s
       retries: 20
+
+  zipkin:
+    image: openzipkin/zipkin:3
+    ports:
+      - "9411:9411"
+
+  prometheus:
+    image: prom/prometheus:v2.53.0
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    ports:
+      - "9090:9090"
+
+  grafana:
+    image: grafana/grafana:11.1.0
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH: /var/lib/grafana/dashboards/library.json
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    ports:
+      - "3001:3000"
+    depends_on:
+      - prometheus
+
   config-server:
     build:
-      context: .
+      <<: *build
       args:
         MODULE: config-server
     ports:
@@ -23,9 +81,10 @@ services:
       timeout: 3s
       retries: 30
     restart: on-failure
+
   discovery-server:
     build:
-      context: .
+      <<: *build
       args:
         MODULE: discovery-server
     ports:
@@ -35,112 +94,115 @@ services:
       interval: 5s
       timeout: 3s
       retries: 30
+    depends_on:
+      config-server:
+        condition: service_healthy
     restart: on-failure
+
   api-gateway:
     build:
-      context: .
+      <<: *build
       args:
         MODULE: api-gateway
     ports:
       - "8080:8080"
     environment:
-      CONFIG_URL: http://config-server:8888
-      EUREKA_URL: http://discovery-server:8761/eureka
+      <<: *app-env
+      JWT_SECRET: ${JWT_SECRET:-library-demo-secret-library-demo-secret-2026}
     depends_on:
       config-server:
         condition: service_healthy
       discovery-server:
         condition: service_healthy
     restart: on-failure
+
   book-service:
     build:
-      context: .
+      <<: *build
       args:
         MODULE: book-service
     ports:
-      - "8081:8081"
+      - "127.0.0.1:8081:8081"
     environment:
-      CONFIG_URL: http://config-server:8888
-      EUREKA_URL: http://discovery-server:8761/eureka
-    depends_on:
-      config-server:
-        condition: service_healthy
-      discovery-server:
-        condition: service_healthy
+      <<: *app-env
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/bookdb
+      SPRING_DATASOURCE_USERNAME: bookuser
+      SPRING_DATASOURCE_PASSWORD: book123
+    depends_on: *app-deps
     restart: on-failure
+
   member-service:
     build:
-      context: .
+      <<: *build
       args:
         MODULE: member-service
     ports:
-      - "8082:8082"
+      - "127.0.0.1:8082:8082"
     environment:
-      CONFIG_URL: http://config-server:8888
-      EUREKA_URL: http://discovery-server:8761/eureka
-    depends_on:
-      config-server:
-        condition: service_healthy
-      discovery-server:
-        condition: service_healthy
+      <<: *app-env
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/memberdb
+      SPRING_DATASOURCE_USERNAME: memberuser
+      SPRING_DATASOURCE_PASSWORD: member123
+    depends_on: *app-deps
     restart: on-failure
+
   lending-service:
     build:
-      context: .
+      <<: *build
       args:
         MODULE: lending-service
     ports:
-      - "8083:8083"
+      - "127.0.0.1:8083:8083"
     environment:
-      CONFIG_URL: http://config-server:8888
-      EUREKA_URL: http://discovery-server:8761/eureka
+      <<: *app-env
       SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/lendingdb
+      SPRING_DATASOURCE_USERNAME: lendinguser
+      SPRING_DATASOURCE_PASSWORD: lending123
     depends_on:
-      config-server:
-        condition: service_healthy
-      discovery-server:
-        condition: service_healthy
+      <<: *app-deps
       rabbitmq:
         condition: service_healthy
     restart: on-failure
+
   fine-service:
     build:
-      context: .
+      <<: *build
       args:
         MODULE: fine-service
     ports:
-      - "8084:8084"
+      - "127.0.0.1:8084:8084"
     environment:
-      CONFIG_URL: http://config-server:8888
-      EUREKA_URL: http://discovery-server:8761/eureka
+      <<: *app-env
       SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/finedb
+      SPRING_DATASOURCE_USERNAME: fineuser
+      SPRING_DATASOURCE_PASSWORD: fine123
     depends_on:
-      config-server:
-        condition: service_healthy
-      discovery-server:
-        condition: service_healthy
+      <<: *app-deps
       rabbitmq:
         condition: service_healthy
     restart: on-failure
+
   notification-service:
     build:
-      context: .
+      <<: *build
       args:
         MODULE: notification-service
     ports:
-      - "8085:8085"
+      - "127.0.0.1:8085:8085"
     environment:
-      CONFIG_URL: http://config-server:8888
-      EUREKA_URL: http://discovery-server:8761/eureka
+      <<: *app-env
       SPRING_RABBITMQ_HOST: rabbitmq
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/notificationdb
+      SPRING_DATASOURCE_USERNAME: notificationuser
+      SPRING_DATASOURCE_PASSWORD: notification123
     depends_on:
-      config-server:
-        condition: service_healthy
-      discovery-server:
-        condition: service_healthy
+      <<: *app-deps
       rabbitmq:
         condition: service_healthy
     restart: on-failure
+
   frontend:
     build: ./frontend
     ports:
@@ -148,3 +210,6 @@ services:
     depends_on:
       - api-gateway
     restart: on-failure
+
+volumes:
+  pgdata:

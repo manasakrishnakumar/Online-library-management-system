@@ -10,7 +10,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 class BookControllerTest {
     private final BookRepository repo = mock(BookRepository.class);
-    private final BookController controller = new BookController(repo);
+    private final StockOpRepository ops = mock(StockOpRepository.class);
+    private final BookController controller = new BookController(repo, ops);
 
     private Book book(int total) {
         Book b = new Book("Clean Code", "Robert C. Martin", "123", "Software", total);
@@ -22,21 +23,29 @@ class BookControllerTest {
     @Test
     void borrowReducesAvailableCopies() {
         book(2);
-        assertEquals(1, controller.borrow(1L).getAvailableCopies());
+        assertEquals(1, controller.borrow(1L, null).getAvailableCopies());
     }
 
     @Test
     void borrowFailsWhenNoCopiesLeft() {
         book(1);
-        controller.borrow(1L);
-        ResponseStatusException e = assertThrows(ResponseStatusException.class, () -> controller.borrow(1L));
+        controller.borrow(1L, null);
+        ResponseStatusException e = assertThrows(ResponseStatusException.class, () -> controller.borrow(1L, null));
         assertEquals(HttpStatus.CONFLICT, e.getStatusCode());
     }
 
     @Test
     void returnNeverExceedsTotalCopies() {
         book(2);
-        assertEquals(2, controller.giveBack(1L).getAvailableCopies());
+        assertEquals(2, controller.giveBack(1L, null).getAvailableCopies());
+    }
+
+    @Test
+    void repeatedIdempotencyKeyDoesNotChangeStockTwice() {
+        book(3);
+        when(ops.existsById("loan-1-borrow")).thenReturn(false, true);
+        assertEquals(2, controller.borrow(1L, "loan-1-borrow").getAvailableCopies());
+        assertEquals(2, controller.borrow(1L, "loan-1-borrow").getAvailableCopies());
     }
 
     @Test
