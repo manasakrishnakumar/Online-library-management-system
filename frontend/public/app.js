@@ -75,17 +75,22 @@ pages.dashboard = async view => {
 
 pages.books = async view => {
   let books = await api("GET", "/api/books");
-  let q = "";
+  let q = "", page = 0;
+  const PAGE = 25;
   const draw = () => {
-    const rows = books.filter(b => (b.title + " " + b.author + " " + b.isbn + " " + (b.category || "")).toLowerCase().includes(q.toLowerCase()));
+    const all = books.filter(b => (b.title + " " + b.author + " " + b.isbn + " " + (b.category || "")).toLowerCase().includes(q.toLowerCase()));
+    const pages = Math.max(1, Math.ceil(all.length / PAGE));
+    page = Math.min(page, pages - 1);
+    const rows = all.slice(page * PAGE, page * PAGE + PAGE);
     $("#list").innerHTML = table([
       { h: "Title", k: "title" }, { h: "Author", k: "author" }, { h: "Category", k: "category" }, { h: "ISBN", k: "isbn" },
       { h: "Available", f: b => b.availableCopies > 0 ? `<span class="tag ok">${b.availableCopies} / ${b.totalCopies}</span>` : `<span class="tag bad">0 / ${b.totalCopies}</span>` }
-    ], rows, b => `<button class="b s" data-edit="${b.id}">Edit</button><button class="b s d" data-del="${b.id}">Delete</button>`);
+    ], rows, b => `<button class="b s" data-edit="${b.id}">Edit</button><button class="b s d" data-del="${b.id}">Delete</button>`) +
+      `<div class="bar" style="margin:12px 0 0"><button class="b s" data-pg="-1" ${page === 0 ? "disabled" : ""}>Previous</button><span>Page ${page + 1} of ${pages} &middot; ${all.length} books</span><button class="b s" data-pg="1" ${page >= pages - 1 ? "disabled" : ""}>Next</button></div>`;
   };
   view.innerHTML = `<div class="bar"><input id="q" type="search" placeholder="Search title, author, category or ISBN"><span class="grow"></span><button class="b p" id="add">Add book</button></div><div class="panel" id="list"></div>`;
   draw();
-  $("#q").oninput = e => { q = e.target.value; draw(); };
+  $("#q").oninput = e => { q = e.target.value; page = 0; draw(); };
   const form = (title, b) => {
     const s = openModal(title, `<form id="f">
       <label>Title<input name="title" required value="${esc(b?.title)}"></label>
@@ -105,6 +110,7 @@ pages.books = async view => {
   $("#add").onclick = () => form("Add book");
   $("#list").onclick = safe(async e => {
     const edit = e.target.dataset.edit, del = e.target.dataset.del;
+    if (e.target.dataset.pg) { page += +e.target.dataset.pg; draw(); return; }
     if (edit) form("Edit book", books.find(b => b.id == edit));
     if (del && confirm("Delete this book?")) { await api("DELETE", "/api/books/" + del); toast("Book deleted"); route(); }
   });
@@ -155,11 +161,14 @@ pages.lending = async view => {
       (l.status === "ISSUED" ? `<button class="b s" data-late="${l.id}" title="Demo: make this loan 20 days overdue">Make overdue</button>` : ""))}</div>`;
   $("#issue").onclick = () => {
     const free = books.filter(b => b.availableCopies > 0), act = members.filter(m => m.active);
+    const opts = (term) => free.filter(b => b.title.toLowerCase().includes(term.toLowerCase())).slice(0, 50)
+      .map(b => `<option value="${b.id}">${esc(b.title)} (${b.availableCopies} left)</option>`).join("");
     const s = openModal("Issue a book", `<form id="f">
-      <label>Book<select name="bookId" required>${free.map(b => `<option value="${b.id}">${esc(b.title)} (${b.availableCopies} left)</option>`).join("")}</select></label>
+      <label>Book (type to search, showing up to 50)<input id="bq" placeholder="e.g. Hobbit"><select name="bookId" id="bsel" required>${opts("")}</select></label>
       <label>Member<select name="memberId" required>${act.map(m => `<option value="${m.id}">${esc(m.name)}</option>`).join("")}</select></label>
       <div class="row"><button type="button" class="b" id="cancel">Cancel</button><button class="b p">Issue</button></div></form>`);
     $("#cancel", s).onclick = closeModal;
+    $("#bq", s).oninput = e => { $("#bsel", s).innerHTML = opts(e.target.value); };
     $("#f", s).onsubmit = safe(async e => {
       e.preventDefault();
       const d = Object.fromEntries(new FormData(e.target));

@@ -257,7 +257,7 @@ class DemoDataSeeder {
             }
             long[][] plan = { {5, 1}, {7, 2}, {10, 3}, {12, 4}, {20, 5}, {29, 6}, {31, 7}, {38, 8} };
             Loan[] l = new Loan[plan.length];
-            for (int i = 0; i < plan.length; i++) l[i] = lending.issue(new IssueRequest(plan[i][0], plan[i][1]));
+            for (int i = 0; i < plan.length; i++) l[i] = issueWithRetry(new IssueRequest(plan[i][0], plan[i][1]));
             lending.giveBack(l[0].getId());           // returned on time
             lending.giveBack(l[1].getId());
             late(l[2], 21);                           // still out, overdue
@@ -267,6 +267,17 @@ class DemoDataSeeder {
             log.info("Demo lending data loaded");
         } catch (Exception e) {
             log.warn("Demo data not loaded: {}", e.getMessage());
+        }
+    }
+
+    /** The circuit breakers may still be open from the startup wait, so retry until they close again. */
+    private Loan issueWithRetry(IssueRequest req) throws InterruptedException {
+        for (int attempt = 1; ; attempt++) {
+            try { return lending.issue(req); }
+            catch (RuntimeException e) {
+                if (attempt >= 8) throw e;
+                Thread.sleep(6000);
+            }
         }
     }
 

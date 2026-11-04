@@ -27,10 +27,10 @@ public class BookServiceApplication {
             if (repo.count() > 0) return;
             try (var in = BookServiceApplication.class.getResourceAsStream("/books.csv");
                  var rd = new java.io.BufferedReader(new java.io.InputStreamReader(in, java.nio.charset.StandardCharsets.UTF_8))) {
-                rd.lines().skip(1).filter(l -> !l.isBlank()).forEach(l -> {
+                repo.saveAll(rd.lines().skip(1).filter(l -> !l.isBlank()).map(l -> {
                     String[] c = l.split("[|]");
-                    repo.save(new Book(c[0], c[1], c[2], c[3], Integer.parseInt(c[4].trim())));
-                });
+                    return new Book(c[0], c[1], c[2], c[3], Integer.parseInt(c[4].trim()));
+                }).toList());
             }
         };
     }

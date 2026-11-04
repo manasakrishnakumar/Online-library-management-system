@@ -28,7 +28,7 @@ Two communication styles are used on purpose:
 | config-server | 8888 | Centralised configuration (loan period, fine rate, Eureka URL) | – |
 | discovery-server | 8761 | Eureka service registry | – |
 | api-gateway | 8080 | Single entry point, routing, CORS | – |
-| book-service | 8081 | Catalogue (40 sample books), search, copy availability | H2 `bookdb` |
+| book-service | 8081 | Catalogue (10,000 real books), search, copy availability | H2 `bookdb` |
 | member-service | 8082 | Members (15 sample members) | H2 `memberdb` |
 | lending-service | 8083 | Issue/return, due dates, event log, publishes events | H2 `lendingdb` |
 | fine-service | 8084 | Fines from late-return events, manual calculation, payment | H2 `finedb` |
@@ -41,7 +41,7 @@ Services never touch each other's database; they only use REST or events and kee
 
 On first start the system loads a dataset so every screen has content:
 
-- `book-service/src/main/resources/books.csv`: 40 real textbook and fiction titles across 14 categories.
+- `book-service/src/main/resources/books.csv`: 10,000 real books from the public **Goodbooks-10k** dataset (https://github.com/zygmuntz/goodbooks-10k, also on Kaggle): real titles, authors and ISBNs, most popular first. Dataset has no genre field, so the category column holds the publication era. Copies per title (1 to 5) are generated. Please check the dataset repo for its licence and credit it when you present the project.
 - `member-service/src/main/resources/members.csv`: 15 members.
 - lending-service creates 8 demo loans: 2 returned on time, 2 returned late (fines are generated automatically through RabbitMQ), 2 overdue, 2 on time.
 
