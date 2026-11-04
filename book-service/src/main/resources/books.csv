@@ -1,0 +1,41 @@
+title|author|isbn|category|copies
+Clean Code|Robert C. Martin|9780132350884|Software Engineering|3
+The Pragmatic Programmer|Andrew Hunt, David Thomas|9780135957059|Software Engineering|3
+Design Patterns|Erich Gamma et al.|9780201633610|Software Engineering|2
+Refactoring|Martin Fowler|9780134757599|Software Engineering|2
+Building Microservices|Sam Newman|9781492034025|Microservices|3
+Microservices: Up and Running|Ronnie Mitra, Irakli Nadareishvili|9781492075455|Microservices|2
+Spring Microservices in Action|John Carnell|9781617293986|Microservices|3
+Microservices Patterns|Chris Richardson|9781617294549|Microservices|2
+Domain-Driven Design|Eric Evans|9780321125217|Microservices|2
+Designing Data-Intensive Applications|Martin Kleppmann|9781449373320|Databases|3
+Database System Concepts|Silberschatz, Korth, Sudarshan|9780078022159|Databases|2
+Introduction to Algorithms|Cormen, Leiserson, Rivest, Stein|9780262033848|Algorithms|3
+Algorithms|Robert Sedgewick, Kevin Wayne|9780321573513|Algorithms|2
+Operating System Concepts|Silberschatz, Galvin, Gagne|9781119800361|Systems|3
+Computer Networking: A Top-Down Approach|Kurose, Ross|9780136681557|Networks|3
+Computer Networks|Andrew S. Tanenbaum|9780132126953|Networks|2
+Artificial Intelligence: A Modern Approach|Russell, Norvig|9780134610993|AI|3
+Deep Learning|Goodfellow, Bengio, Courville|9780262035613|AI|2
+Hands-On Machine Learning|Aurelien Geron|9781492032649|AI|3
+Python Crash Course|Eric Matthes|9781718502703|Programming|4
+Effective Java|Joshua Bloch|9780134685991|Programming|3
+Head First Java|Kathy Sierra, Bert Bates|9781491910771|Programming|4
+Java: The Complete Reference|Herbert Schildt|9781260440232|Programming|3
+The C Programming Language|Kernighan, Ritchie|9780131103627|Programming|3
+Docker Deep Dive|Nigel Poulton|9781916585256|DevOps|2
+Kubernetes Up and Running|Brendan Burns et al.|9781492046530|DevOps|2
+The Phoenix Project|Gene Kim et al.|9781942788294|DevOps|2
+Site Reliability Engineering|Betsy Beyer et al.|9781491929124|DevOps|2
+Software Engineering|Ian Sommerville|9780133943030|Software Engineering|3
+Wings of Fire|A. P. J. Abdul Kalam|9788173711466|Biography|3
+The Alchemist|Paulo Coelho|9780062315007|Fiction|3
+Malgudi Days|R. K. Narayan|9780143039655|Fiction|2
+The God of Small Things|Arundhati Roy|9780812979657|Fiction|2
+Train to Pakistan|Khushwant Singh|9780143065883|Fiction|2
+Midnight's Children|Salman Rushdie|9780812976533|Fiction|2
+The Discovery of India|Jawaharlal Nehru|9780143031031|History|2
+India After Gandhi|Ramachandra Guha|9780060958589|History|2
+Sapiens|Yuval Noah Harari|9780062316110|History|3
+Atomic Habits|James Clear|9780735211292|Self Help|4
+Thinking, Fast and Slow|Daniel Kahneman|9780374533557|Psychology|2

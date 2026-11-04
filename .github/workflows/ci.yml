@@ -1,0 +1,16 @@
+name: CI
+on: [push, pull_request]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: 17, cache: maven }
+      - run: mvn -B verify
+      - name: Build container images
+        run: |
+          for m in config-server discovery-server api-gateway book-service member-service lending-service fine-service notification-service; do
+            docker build --build-arg MODULE=$m -t library/$m:1.0.0 .
+          done
+          docker build -t library/frontend:1.0.0 ./frontend

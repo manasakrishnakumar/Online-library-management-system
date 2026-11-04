@@ -1,0 +1,93 @@
+# Design Document (SEED(S) Process)
+
+## 1. Team topology
+
+| Team | Type | Owns |
+|---|---|---|
+| Catalogue team | Stream-aligned | book-service |
+| Membership team | Stream-aligned | member-service |
+| Circulation team | Stream-aligned | lending-service, fine-service |
+| Platform team | Platform | api-gateway, discovery-server, config-server, Docker/K8s/CI |
+
+Small stream-aligned teams own a service end to end, which reduces coordination cost; the platform team offers the shared infrastructure as a service.
+
+## 2. Actors
+
+- **Member** – searches books, borrows, returns, pays fines.
+- **Librarian** – manages catalogue and members, issues and receives books.
+- **Admin** – configures loan period and fine rate (Config Server).
+
+## 3. Jobs to be done
+
+| Actor | Job |
+|---|---|
+| Member | Find a book I want to read |
+| Member | Borrow a book and know when it is due |
+| Member | Return a book and see whether I owe a fine |
+| Librarian | Add and maintain books and members |
+| Librarian | Issue and receive books quickly |
+| Librarian | Collect overdue fines |
+
+## 4. Interaction: issuing a book
+
+```
+Librarian -> Gateway -> Lending: POST /api/loans/issue {bookId, memberId}
+Lending -> Member: GET /api/members/{id}      (must be active)
+Lending -> Book:   PUT /api/books/{id}/borrow  (reduces available copies, 409 if none)
+Lending: save Loan, append LoanEvent BOOK_ISSUED
+Lending -> Gateway -> Librarian: 201 Loan (dueDate = today + loan period)
+```
+
+If Member or Book is down, the circuit breaker opens and Lending answers 503.
+
+## 5. Actions and queries (API specification)
+
+| Type | Name | Endpoint | Service |
+|---|---|---|---|
+| Query | List / search books | `GET /api/books`, `/search?q=` | book |
+| Action | Add/update/delete book | `POST/PUT/DELETE /api/books` | book |
+| Action | Borrow / return copy (internal) | `PUT /api/books/{id}/borrow`, `/return` | book |
+| Query | List members, get member | `GET /api/members` | member |
+| Action | Register/update member | `POST/PUT /api/members` | member |
+| Action | Issue book | `POST /api/loans/issue` | lending |
+| Action | Return book | `POST /api/loans/{id}/return` | lending |
+| Query | Loans, loans by member, loan history | `GET /api/loans...` | lending |
+| Action | Calculate fine | `POST /api/fines/calculate/{loanId}` | fine |
+| Action | Pay fine | `PUT /api/fines/{id}/pay` | fine |
+| Query | List fines | `GET /api/fines` | fine |
+
+The specification is the controller code itself; each endpoint above is implemented and exercised through the gateway.
+
+## 6. Event storming
+
+Domain events (orange), commands (blue), in time order:
+
+`Book Added` → `Member Registered` → *Issue Book* → `Book Issued` → *Return Book* → `Book Returned` → *Calculate Fine* → `Fine Assessed` → `Member Notified` → *Pay Fine* → `Fine Paid`
+
+Aggregates found: Book, Member, Loan, Fine. Related events cluster into four groups, which become the bounded contexts.
+
+## 7. Boundaries and sizing
+
+| Bounded context | Service | Why separate |
+|---|---|---|
+| Catalogue | book-service | Changes with stock and cataloguing; read-heavy, scales independently |
+| Membership | member-service | Personal data, different change reasons |
+| Lending | lending-service | Core workflow, owns loan state and event history |
+| Fines | fine-service | Pricing rules change independently of lending |
+| Notifications | notification-service | Pure consumer of events; can be added or replaced without touching lending |
+
+Each service is small enough for one team to understand (a few hundred lines), has one reason to change, and owns its own data. Fine-service is kept apart from lending because fine policy changes at a different pace.
+
+## 8. Data and consistency
+
+- Database per service; only IDs cross boundaries.
+- Lending keeps an append-only `LoanEvent` log (event sourcing in miniature). The loan row is current state; events give the history, and `GET /api/loans/{id}/events` is the query side.
+- Events: lending publishes `loan.issued` and `loan.returned` to RabbitMQ after its database transaction commits; fine-service publishes `fine.assessed`. Consumers are independent, so a slow or absent notification-service never blocks lending.
+- Known limitation: the stock update in book-service and the loan save in lending-service are not one atomic transaction, and publishing after commit can lose an event if the broker is down. A production design would use a saga and the transactional outbox pattern.
+
+## 9. Infrastructure and release
+
+- Config Server holds shared settings; services import them on startup.
+- Eureka registers services; gateway routes with `lb://`.
+- Resilience4j circuit breakers (`bookService`, `memberService`, `lendingService`).
+- Docker image per service from one multi-stage Dockerfile; `docker-compose.yml` for local, `k8s/library.yaml` for cluster; GitHub Actions builds and tests on each push.

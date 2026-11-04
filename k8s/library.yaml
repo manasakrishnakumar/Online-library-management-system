@@ -1,0 +1,387 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: library
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rabbitmq
+  namespace: library
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: rabbitmq}
+  template:
+    metadata:
+      labels: {app: rabbitmq}
+    spec:
+      containers:
+      - name: rabbitmq
+        image: rabbitmq:3.13-alpine
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 5672
+        readinessProbe:
+          tcpSocket: {port: 5672}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq
+  namespace: library
+spec:
+  selector:
+    app: rabbitmq
+  ports:
+  - port: 5672
+    targetPort: 5672
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: config-server
+  namespace: library
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: config-server}
+  template:
+    metadata:
+      labels: {app: config-server}
+    spec:
+      containers:
+      - name: config-server
+        image: library/config-server:1.0.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8888
+        readinessProbe:
+          tcpSocket: {port: 8888}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: config-server
+  namespace: library
+spec:
+  selector:
+    app: config-server
+  ports:
+  - port: 8888
+    targetPort: 8888
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: discovery-server
+  namespace: library
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: discovery-server}
+  template:
+    metadata:
+      labels: {app: discovery-server}
+    spec:
+      containers:
+      - name: discovery-server
+        image: library/discovery-server:1.0.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8761
+        readinessProbe:
+          tcpSocket: {port: 8761}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: discovery-server
+  namespace: library
+spec:
+  selector:
+    app: discovery-server
+  ports:
+  - port: 8761
+    targetPort: 8761
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: api-gateway
+  namespace: library
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: api-gateway}
+  template:
+    metadata:
+      labels: {app: api-gateway}
+    spec:
+      containers:
+      - name: api-gateway
+        image: library/api-gateway:1.0.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+        env:
+        - {name: CONFIG_URL, value: "http://config-server:8888"}
+        - {name: EUREKA_URL, value: "http://discovery-server:8761/eureka"}
+        readinessProbe:
+          tcpSocket: {port: 8080}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway
+  namespace: library
+spec:
+  selector:
+    app: api-gateway
+  ports:
+  - port: 8080
+    targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: book-service
+  namespace: library
+spec:
+  replicas: 2
+  selector:
+    matchLabels: {app: book-service}
+  template:
+    metadata:
+      labels: {app: book-service}
+    spec:
+      containers:
+      - name: book-service
+        image: library/book-service:1.0.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8081
+        env:
+        - {name: CONFIG_URL, value: "http://config-server:8888"}
+        - {name: EUREKA_URL, value: "http://discovery-server:8761/eureka"}
+        readinessProbe:
+          tcpSocket: {port: 8081}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: book-service
+  namespace: library
+spec:
+  selector:
+    app: book-service
+  ports:
+  - port: 8081
+    targetPort: 8081
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: member-service
+  namespace: library
+spec:
+  replicas: 2
+  selector:
+    matchLabels: {app: member-service}
+  template:
+    metadata:
+      labels: {app: member-service}
+    spec:
+      containers:
+      - name: member-service
+        image: library/member-service:1.0.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8082
+        env:
+        - {name: CONFIG_URL, value: "http://config-server:8888"}
+        - {name: EUREKA_URL, value: "http://discovery-server:8761/eureka"}
+        readinessProbe:
+          tcpSocket: {port: 8082}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: member-service
+  namespace: library
+spec:
+  selector:
+    app: member-service
+  ports:
+  - port: 8082
+    targetPort: 8082
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: lending-service
+  namespace: library
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: lending-service}
+  template:
+    metadata:
+      labels: {app: lending-service}
+    spec:
+      containers:
+      - name: lending-service
+        image: library/lending-service:1.0.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8083
+        env:
+        - {name: CONFIG_URL, value: "http://config-server:8888"}
+        - {name: EUREKA_URL, value: "http://discovery-server:8761/eureka"}
+        - {name: SPRING_RABBITMQ_HOST, value: "rabbitmq"}
+        readinessProbe:
+          tcpSocket: {port: 8083}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: lending-service
+  namespace: library
+spec:
+  selector:
+    app: lending-service
+  ports:
+  - port: 8083
+    targetPort: 8083
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: fine-service
+  namespace: library
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: fine-service}
+  template:
+    metadata:
+      labels: {app: fine-service}
+    spec:
+      containers:
+      - name: fine-service
+        image: library/fine-service:1.0.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8084
+        env:
+        - {name: CONFIG_URL, value: "http://config-server:8888"}
+        - {name: EUREKA_URL, value: "http://discovery-server:8761/eureka"}
+        - {name: SPRING_RABBITMQ_HOST, value: "rabbitmq"}
+        readinessProbe:
+          tcpSocket: {port: 8084}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: fine-service
+  namespace: library
+spec:
+  selector:
+    app: fine-service
+  ports:
+  - port: 8084
+    targetPort: 8084
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: notification-service
+  namespace: library
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: notification-service}
+  template:
+    metadata:
+      labels: {app: notification-service}
+    spec:
+      containers:
+      - name: notification-service
+        image: library/notification-service:1.0.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8085
+        env:
+        - {name: CONFIG_URL, value: "http://config-server:8888"}
+        - {name: EUREKA_URL, value: "http://discovery-server:8761/eureka"}
+        - {name: SPRING_RABBITMQ_HOST, value: "rabbitmq"}
+        readinessProbe:
+          tcpSocket: {port: 8085}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: notification-service
+  namespace: library
+spec:
+  selector:
+    app: notification-service
+  ports:
+  - port: 8085
+    targetPort: 8085
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: library
+spec:
+  replicas: 1
+  selector:
+    matchLabels: {app: frontend}
+  template:
+    metadata:
+      labels: {app: frontend}
+    spec:
+      containers:
+      - name: frontend
+        image: library/frontend:1.0.0
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 80
+        readinessProbe:
+          tcpSocket: {port: 80}
+          initialDelaySeconds: 30
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend
+  namespace: library
+spec:
+  type: NodePort
+  selector:
+    app: frontend
+  ports:
+  - port: 80
+    targetPort: 80
+    nodePort: 30080
