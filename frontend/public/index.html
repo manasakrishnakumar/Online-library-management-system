@@ -4,12 +4,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Online Library Management System</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%9A%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <div class="app">
   <aside class="side" id="side">
-    <div class="brand"><span class="logo">&#128216;</span><div><strong>Online Library</strong><small>Management System</small></div></div>
+    <div class="brand"><span class="logo">&#128218;</span><div><strong>Online Library</strong><small>Management System</small></div></div>
     <nav id="nav"></nav>
     <div class="foot">Microservices &middot; IS373TA</div>
   </aside>
@@ -23,14 +24,27 @@
   </div>
 </div>
 <div id="login" class="modal loginwrap" hidden>
-  <form class="sheet" id="loginForm">
-    <h2>Sign in</h2>
-    <label>Username<input name="username" autocomplete="username" required></label>
-    <label>Password<input name="password" type="password" autocomplete="current-password" required></label>
-    <div id="loginErr" class="loginerr"></div>
-    <div class="row"><button class="b p">Sign in</button></div>
-    <p class="hint">Demo accounts: <b>librarian</b> / librarian123 (full access), or <b>asha.rao@example.com</b> / member123 (member view).</p>
-  </form>
+  <div class="login">
+    <section class="promo">
+      <span class="logo">&#128218;</span>
+      <h1>Online Library<br>Management System</h1>
+      <p>Browse ten thousand real books, borrow and return with a click, and follow every loan, fine and notification.</p>
+      <ul>
+        <li><span>&#128218;</span>10,000-title catalogue</li>
+        <li><span>&#128274;</span>Role-based access for librarians and members</li>
+        <li><span>&#9889;</span>Built as independent microservices</li>
+      </ul>
+    </section>
+    <form id="loginForm">
+      <h2>Welcome back</h2>
+      <p class="sub">Sign in to continue</p>
+      <label>Username<input name="username" autocomplete="username" required></label>
+      <label>Password<input name="password" type="password" autocomplete="current-password" required></label>
+      <div id="loginErr" class="loginerr"></div>
+      <button class="b p">Sign in</button>
+      <p class="hint">Demo accounts: <b>librarian</b> / librarian123 (full access), or <b>asha.rao@example.com</b> / member123 (member view).</p>
+    </form>
+  </div>
 </div>
 <div id="modal" class="modal" hidden><div class="sheet" id="sheet"></div></div>
 <div id="toasts"></div>

@@ -51,11 +51,21 @@ $("#modal").addEventListener("click", e => { if (e.target.id === "modal") closeM
 document.addEventListener("keydown", e => { if (e.key === "Escape") closeModal(); });
 
 function table(cols, rows, actions) {
-  if (!rows.length) return `<div class="empty">Nothing here yet.</div>`;
+  if (!rows.length) return `<div class="empty"><span class="big">&#128237;</span>Nothing here yet.</div>`;
   const head = cols.map(c => `<th>${esc(c.h)}</th>`).join("") + (actions ? "<th></th>" : "");
   const body = rows.map(r => `<tr>${cols.map(c => `<td${c.w ? ' class="w"' : ""}>${c.f ? c.f(r) : esc(r[c.k])}</td>`).join("")}${actions ? `<td class="act">${actions(r)}</td>` : ""}</tr>`).join("");
   return `<div class="tw"><table><tr>${head}</tr>${body}</table></div>`;
 }
+
+
+const firstName = () => {
+  const n = (session.username || "").split("@")[0].split(".")[0];
+  return n.charAt(0).toUpperCase() + n.slice(1);
+};
+const shortTitle = t => String(t).replace(/\s*\(.*\)\s*$/, "");
+const coverHue = t => { let h = 0; for (const ch of String(t)) h = (h * 31 + ch.charCodeAt(0)) % 360; return h; };
+const cover = b => `<div class="cover" style="--h:${coverHue(b.title)}"><span>${esc(shortTitle(b.title))}</span></div>`;
+const stat = (icon, n, l, tone) => `<div class="stat ${tone || ""}"><div class="ico">${icon}</div><div><div class="n">${esc(n)}</div><div class="l">${esc(l)}</div></div></div>`;
 
 const isOverdue = l => l.status === "ISSUED" && l.dueDate < today();
 
@@ -66,43 +76,69 @@ pages.dashboard = async view => {
   const [books, members, loans, fines] = await Promise.all([api("GET", "/api/books"), api("GET", "/api/members"), api("GET", "/api/loans"), api("GET", "/api/fines")]);
   const active = loans.filter(l => l.status === "ISSUED");
   const overdue = active.filter(isOverdue);
-  const unpaid = fines.filter(f => !f.paid).reduce((s, f) => s + Number(f.amount), 0);
-  const titleOf = id => (books.find(b => b.id === id) || {}).title || "Book #" + id;
+  const open = fines.filter(f => !f.paid);
+  const unpaid = open.reduce((s, f) => s + Number(f.amount), 0);
+  const total = books.reduce((s, b) => s + b.totalCopies, 0), avail = books.reduce((s, b) => s + b.availableCopies, 0);
+  const pct = total ? Math.round(avail / total * 100) : 0;
   const nameOf = id => (members.find(m => m.id === id) || {}).name || "Member #" + id;
-  const stat = (n, l) => `<div class="stat"><div class="n">${esc(n)}</div><div class="l">${esc(l)}</div></div>`;
-  view.innerHTML = `<div class="cards">
-      ${stat(books.length, "Book titles")}
-      ${stat(books.reduce((s, b) => s + b.availableCopies, 0) + " / " + books.reduce((s, b) => s + b.totalCopies, 0), "Copies available")}
-      ${stat(members.length, "Members")}
-      ${stat(active.length, "Books on loan")}
-      ${stat(overdue.length, "Overdue loans")}
-      ${stat("₹" + unpaid.toFixed(2), "Unpaid fines")}
+  view.innerHTML = `<section class="hero"><div><h2>Welcome back, ${esc(firstName())}</h2>
+      <p>${active.length} book${active.length === 1 ? " is" : "s are"} out on loan and ${overdue.length} ${overdue.length === 1 ? "is" : "are"} overdue. ${open.length ? "Unpaid fines: ₹" + unpaid.toFixed(2) + "." : "No unpaid fines."}</p></div>
+      <div class="ring" style="--p:${pct}"><span>${pct}%<small>in stock</small></span></div></section>
+    <div class="cards">
+      ${stat("&#128218;", books.length.toLocaleString(), "Book titles")}
+      ${stat("&#128214;", avail.toLocaleString() + " / " + total.toLocaleString(), "Copies available", "good")}
+      ${stat("&#128101;", members.length, "Members")}
+      ${stat("&#128257;", active.length, "Books on loan", "warn")}
+      ${stat("&#9200;", overdue.length, "Overdue loans", overdue.length ? "bad" : "good")}
+      ${stat("&#128176;", "₹" + unpaid.toFixed(2), "Unpaid fines", open.length ? "bad" : "good")}
     </div>
-    <div class="panel"><h2>Currently on loan</h2>${table([
-      { h: "Book", k: "bookTitle", w: 1 }, { h: "Member", k: "memberName", w: 1 },
-      { h: "Due", k: "dueDate" }, { h: "Status", f: l => isOverdue(l) ? '<span class="tag bad">Overdue</span>' : '<span class="tag ok">On time</span>' }
-    ], active)}</div>`;
+    <div class="two">
+      <div class="panel"><h2>Currently on loan</h2>${table([
+        { h: "Book", k: "bookTitle", w: 1 }, { h: "Member", k: "memberName", w: 1 },
+        { h: "Due", k: "dueDate" }, { h: "Status", f: l => isOverdue(l) ? '<span class="tag bad">Overdue</span>' : '<span class="tag ok">On time</span>' }
+      ], active)}</div>
+      <div class="panel"><h2>Unpaid fines</h2>${table([
+        { h: "Member", f: f => esc(nameOf(f.memberId)) }, { h: "Days late", k: "daysOverdue" }, { h: "Amount", f: f => "₹" + Number(f.amount).toFixed(2) }
+      ], open)}</div>
+    </div>`;
 };
 
 pages.books = async view => {
   const ro = !isLibrarian();
   let books = await api("GET", "/api/books");
-  let q = "", page = 0;
-  const PAGE = 25;
+  let q = "", page = 0, mode = "grid";
   const draw = () => {
+    const PAGE = mode === "grid" ? 24 : 25;
     const all = books.filter(b => (b.title + " " + b.author + " " + b.isbn + " " + (b.category || "")).toLowerCase().includes(q.toLowerCase()));
     const pages = Math.max(1, Math.ceil(all.length / PAGE));
     page = Math.min(page, pages - 1);
     const rows = all.slice(page * PAGE, page * PAGE + PAGE);
-    $("#list").innerHTML = table([
-      { h: "Title", k: "title", w: 1 }, { h: "Author", k: "author", w: 1 }, { h: "Category", k: "category" }, { h: "ISBN", k: "isbn" },
-      { h: "Available", f: b => b.availableCopies > 0 ? `<span class="tag ok">${b.availableCopies} / ${b.totalCopies}</span>` : `<span class="tag bad">0 / ${b.totalCopies}</span>` }
-    ], rows, ro ? null : b => `<button class="b s" data-edit="${b.id}">Edit</button><button class="b s d" data-del="${b.id}">Delete</button>`) +
-      `<div class="bar" style="margin:12px 0 0"><button class="b s" data-pg="-1" ${page === 0 ? "disabled" : ""}>Previous</button><span>Page ${page + 1} of ${pages} &middot; ${all.length} books</span><button class="b s" data-pg="1" ${page >= pages - 1 ? "disabled" : ""}>Next</button></div>`;
+    const avail = b => b.availableCopies > 0 ? `<span class="tag ok">${b.availableCopies} of ${b.totalCopies} in</span>` : `<span class="tag bad">All out</span>`;
+    const acts = b => ro ? "" : `<div class="acts"><button class="b s" data-edit="${b.id}">Edit</button><button class="b s d" data-del="${b.id}">Delete</button></div>`;
+    let content;
+    if (!rows.length) content = `<div class="empty"><span class="big">&#128269;</span>No books match your search.</div>`;
+    else if (mode === "grid") {
+      content = `<div class="grid">${rows.map(b => `<article class="book">${cover(b)}<div class="meta"><h3 title="${esc(b.title)}">${esc(shortTitle(b.title))}</h3><p>${esc(b.author)}</p>
+        <div class="chips">${b.category ? `<span class="chip">${esc(b.category)}</span>` : ""}${avail(b)}</div>${acts(b)}</div></article>`).join("")}</div>`;
+    } else {
+      content = table([
+        { h: "Title", k: "title", w: 1 }, { h: "Author", k: "author", w: 1 }, { h: "Category", k: "category" }, { h: "ISBN", k: "isbn" },
+        { h: "Available", f: b => avail(b) }
+      ], rows, ro ? null : b => `<button class="b s" data-edit="${b.id}">Edit</button><button class="b s d" data-del="${b.id}">Delete</button>`);
+    }
+    $("#list").innerHTML = content +
+      `<div class="pager"><button class="b s" data-pg="-1" ${page === 0 ? "disabled" : ""}>&larr; Previous</button><span>Page ${page + 1} of ${pages} &middot; ${all.length.toLocaleString()} books</span><button class="b s" data-pg="1" ${page >= pages - 1 ? "disabled" : ""}>Next &rarr;</button></div>`;
   };
-  view.innerHTML = `<div class="bar"><input id="q" type="search" placeholder="Search title, author, category or ISBN"><span class="grow"></span>${ro ? "" : '<button class="b p" id="add">Add book</button>'}</div><div class="panel" id="list"></div>`;
+  view.innerHTML = `<div class="bar"><input id="q" type="search" placeholder="Search title, author, category or ISBN"><span class="grow"></span>
+    <div class="seg"><button data-mode="grid" class="on">Grid</button><button data-mode="table">Table</button></div>${ro ? "" : '<button class="b p" id="add">+ Add book</button>'}</div><div id="list"></div>`;
   draw();
   $("#q").oninput = e => { q = e.target.value; page = 0; draw(); };
+  view.querySelector(".seg").onclick = e => {
+    if (!e.target.dataset.mode) return;
+    mode = e.target.dataset.mode; page = 0;
+    view.querySelectorAll(".seg button").forEach(b => b.classList.toggle("on", b === e.target));
+    draw();
+  };
   const form = (title, b) => {
     const s = openModal(title, `<form id="f">
       <label>Title<input name="title" required value="${esc(b?.title)}"></label>
@@ -122,7 +158,7 @@ pages.books = async view => {
   if (!ro) $("#add").onclick = () => form("Add book");
   $("#list").onclick = safe(async e => {
     const edit = e.target.dataset.edit, del = e.target.dataset.del;
-    if (e.target.dataset.pg) { page += +e.target.dataset.pg; draw(); return; }
+    if (e.target.dataset.pg) { page += +e.target.dataset.pg; draw(); window.scrollTo({ top: 0, behavior: "smooth" }); return; }
     if (edit) form("Edit book", books.find(b => b.id == edit));
     if (del && confirm("Delete this book?")) { await api("DELETE", "/api/books/" + del); toast("Book deleted"); route(); }
   });
@@ -226,7 +262,9 @@ pages.notifications = async view => {
 
 pages.myloans = async view => {
   const loans = (await api("GET", "/api/loans/member/" + session.memberId)).sort((x, y) => y.id - x.id);
-  view.innerHTML = `<div class="panel">${table([
+  const out = loans.filter(l => l.status === "ISSUED");
+  view.innerHTML = `<section class="hero small"><div><h2>Hello, ${esc(firstName())}</h2><p>You have ${out.length} book${out.length === 1 ? "" : "s"} out${out.filter(isOverdue).length ? ", " + out.filter(isOverdue).length + " overdue" : ""}.</p></div></section>
+    <div class="panel">${table([
     { h: "Book", k: "bookTitle", w: 1 }, { h: "Issued", k: "issueDate" }, { h: "Due", k: "dueDate" }, { h: "Returned", f: l => esc(l.returnDate || "-") },
     { h: "Status", f: l => l.status === "RETURNED" ? '<span class="tag ok">Returned</span>' : isOverdue(l) ? '<span class="tag bad">Overdue</span>' : '<span class="tag warn">' + esc(l.status) + '</span>' }
   ], loans)}</div>`;
@@ -266,14 +304,15 @@ pages.system = async view => {
 const titles = { dashboard: "Dashboard", books: "Books", members: "Members", lending: "Lending", fines: "Fines", notifications: "Notifications", system: "System status",
   myloans: "My loans", myfines: "My fines", mynotes: "My notifications" };
 const NAV = {
-  LIBRARIAN: [["dashboard", "Dashboard"], ["books", "Books"], ["members", "Members"], ["lending", "Lending"], ["fines", "Fines"], ["notifications", "Notifications"], ["system", "System"]],
-  MEMBER: [["books", "Books"], ["myloans", "My loans"], ["myfines", "My fines"], ["mynotes", "My notifications"]]
+  LIBRARIAN: [["dashboard", "Dashboard", "&#128202;"], ["books", "Books", "&#128218;"], ["members", "Members", "&#128101;"], ["lending", "Lending", "&#128257;"],
+    ["fines", "Fines", "&#128176;"], ["notifications", "Notifications", "&#128276;"], ["system", "System", "&#129658;"]],
+  MEMBER: [["books", "Books", "&#128218;"], ["myloans", "My loans", "&#128214;"], ["myfines", "My fines", "&#128176;"], ["mynotes", "My notifications", "&#128276;"]]
 };
 
 function buildNav() {
   const items = NAV[session.role] || [];
-  $("#nav").innerHTML = items.map(([r, t]) => `<a href="#/${r}" data-r="${r}">${esc(t)}</a>`).join("");
-  $("#who").innerHTML = `<span><b>${esc(session.username)}</b> (${esc(session.role.toLowerCase())})</span><button class="b s" id="logout">Sign out</button>`;
+  $("#nav").innerHTML = items.map(([r, t, i]) => `<a href="#/${r}" data-r="${r}"><span class="ni">${i}</span>${esc(t)}</a>`).join("");
+  $("#who").innerHTML = `<div class="av">${esc(firstName().charAt(0))}</div><div class="nm"><b>${esc(session.username)}</b><span>${esc(session.role.toLowerCase())}</span></div><button class="b s" id="logout">Sign out</button>`;
   $("#logout").onclick = () => { saveSession(null); showLogin(""); };
 }
 
