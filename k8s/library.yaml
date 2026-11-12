@@ -169,6 +169,8 @@ spec:
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8888
+        env:
+        - {name: JAVA_TOOL_OPTIONS, value: "-Xmx192m -XX:MaxMetaspaceSize=128m"}
         readinessProbe:
           tcpSocket: {port: 8888}
           initialDelaySeconds: 30
@@ -205,6 +207,8 @@ spec:
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 8761
+        env:
+        - {name: JAVA_TOOL_OPTIONS, value: "-Xmx192m -XX:MaxMetaspaceSize=128m"}
         readinessProbe:
           tcpSocket: {port: 8761}
           initialDelaySeconds: 30
@@ -245,6 +249,7 @@ spec:
         - {name: CONFIG_URL, value: "http://config-server:8888"}
         - {name: EUREKA_URL, value: "http://discovery-server:8761/eureka"}
         - {name: ZIPKIN_URL, value: "http://zipkin:9411/api/v2/spans"}
+        - {name: JAVA_TOOL_OPTIONS, value: "-Xmx256m -XX:MaxMetaspaceSize=160m"}
         - name: JWT_SECRET
           valueFrom:
             secretKeyRef: {name: library-secrets, key: jwt-secret}
@@ -288,6 +293,7 @@ spec:
         - {name: CONFIG_URL, value: "http://config-server:8888"}
         - {name: EUREKA_URL, value: "http://discovery-server:8761/eureka"}
         - {name: ZIPKIN_URL, value: "http://zipkin:9411/api/v2/spans"}
+        - {name: JAVA_TOOL_OPTIONS, value: "-Xmx256m -XX:MaxMetaspaceSize=160m"}
         - {name: SPRING_DATASOURCE_URL, value: "jdbc:postgresql://postgres:5432/bookdb"}
         - {name: SPRING_DATASOURCE_USERNAME, value: "bookuser"}
         - {name: SPRING_DATASOURCE_PASSWORD, value: "book123"}
@@ -331,6 +337,7 @@ spec:
         - {name: CONFIG_URL, value: "http://config-server:8888"}
         - {name: EUREKA_URL, value: "http://discovery-server:8761/eureka"}
         - {name: ZIPKIN_URL, value: "http://zipkin:9411/api/v2/spans"}
+        - {name: JAVA_TOOL_OPTIONS, value: "-Xmx256m -XX:MaxMetaspaceSize=160m"}
         - {name: SPRING_DATASOURCE_URL, value: "jdbc:postgresql://postgres:5432/memberdb"}
         - {name: SPRING_DATASOURCE_USERNAME, value: "memberuser"}
         - {name: SPRING_DATASOURCE_PASSWORD, value: "member123"}
@@ -374,6 +381,7 @@ spec:
         - {name: CONFIG_URL, value: "http://config-server:8888"}
         - {name: EUREKA_URL, value: "http://discovery-server:8761/eureka"}
         - {name: ZIPKIN_URL, value: "http://zipkin:9411/api/v2/spans"}
+        - {name: JAVA_TOOL_OPTIONS, value: "-Xmx256m -XX:MaxMetaspaceSize=160m"}
         - {name: SPRING_RABBITMQ_HOST, value: "rabbitmq"}
         - {name: SPRING_DATASOURCE_URL, value: "jdbc:postgresql://postgres:5432/lendingdb"}
         - {name: SPRING_DATASOURCE_USERNAME, value: "lendinguser"}
@@ -418,6 +426,7 @@ spec:
         - {name: CONFIG_URL, value: "http://config-server:8888"}
         - {name: EUREKA_URL, value: "http://discovery-server:8761/eureka"}
         - {name: ZIPKIN_URL, value: "http://zipkin:9411/api/v2/spans"}
+        - {name: JAVA_TOOL_OPTIONS, value: "-Xmx256m -XX:MaxMetaspaceSize=160m"}
         - {name: SPRING_RABBITMQ_HOST, value: "rabbitmq"}
         - {name: SPRING_DATASOURCE_URL, value: "jdbc:postgresql://postgres:5432/finedb"}
         - {name: SPRING_DATASOURCE_USERNAME, value: "fineuser"}
@@ -462,6 +471,7 @@ spec:
         - {name: CONFIG_URL, value: "http://config-server:8888"}
         - {name: EUREKA_URL, value: "http://discovery-server:8761/eureka"}
         - {name: ZIPKIN_URL, value: "http://zipkin:9411/api/v2/spans"}
+        - {name: JAVA_TOOL_OPTIONS, value: "-Xmx256m -XX:MaxMetaspaceSize=160m"}
         - {name: SPRING_RABBITMQ_HOST, value: "rabbitmq"}
         - {name: SPRING_DATASOURCE_URL, value: "jdbc:postgresql://postgres:5432/notificationdb"}
         - {name: SPRING_DATASOURCE_USERNAME, value: "notificationuser"}

@@ -85,7 +85,7 @@ out += deployment("zipkin", 9411, "openzipkin/zipkin:3")
 for name, port in PORTS.items():
     env = None
     if name not in ("config-server", "discovery-server"):
-        env = {"CONFIG_URL": "http://config-server:8888", "EUREKA_URL": "http://discovery-server:8761/eureka", "ZIPKIN_URL": "http://zipkin:9411/api/v2/spans"}
+        env = {"CONFIG_URL": "http://config-server:8888", "EUREKA_URL": "http://discovery-server:8761/eureka", "ZIPKIN_URL": "http://zipkin:9411/api/v2/spans", "JAVA_TOOL_OPTIONS": "-Xmx256m -XX:MaxMetaspaceSize=160m"}
         if name in RABBIT:
             env["SPRING_RABBITMQ_HOST"] = "rabbitmq"
         if name in DB:
@@ -93,6 +93,8 @@ for name, port in PORTS.items():
             env.update({"SPRING_DATASOURCE_URL": f"jdbc:postgresql://postgres:5432/{d}", "SPRING_DATASOURCE_USERNAME": u, "SPRING_DATASOURCE_PASSWORD": p})
         if name == "api-gateway":
             env["JWT_SECRET"] = {"secret": "library-secrets", "key": "jwt-secret"}
+    if name in ("config-server", "discovery-server"):
+        env = {"JAVA_TOOL_OPTIONS": "-Xmx192m -XX:MaxMetaspaceSize=128m"}   # cap the heap so the whole system fits in about 9 GB
     out += deployment(name, port, f"library/{name}:1.0.0", env, replicas=2 if name in ("book-service", "member-service") else 1)
 out += deployment("frontend", 80, "library/frontend:1.0.0", node=30080)
 open(os.path.join(HERE, "library.yaml"), "w", encoding="utf-8").write(out.rstrip("-\n") + "\n")

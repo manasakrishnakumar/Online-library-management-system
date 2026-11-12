@@ -202,7 +202,7 @@ pages.lending = async view => {
   view.innerHTML = `<div class="bar"><span class="grow"></span><button class="b p" id="issue">Issue a book</button></div>
     <div class="panel">${table([
       { h: "#", k: "id" }, { h: "Book", k: "bookTitle", w: 1 }, { h: "Member", k: "memberName", w: 1 },
-      { h: "Issued", k: "issueDate" }, { h: "Due", k: "dueDate" }, { h: "Returned", f: l => esc(l.returnDate || "-") },
+      { h: "Due", k: "dueDate" }, { h: "Returned", f: l => esc(l.returnDate || "-") },
       { h: "Status", f: l => l.status === "RETURNED" ? '<span class="tag ok">Returned</span>' : l.status === "FAILED" ? `<span class="tag bad" title="${esc(l.failureReason)}">Failed</span>` : l.status === "PENDING" ? '<span class="tag warn">Pending</span>' : isOverdue(l) ? '<span class="tag bad">Overdue</span>' : '<span class="tag warn">Issued</span>' }
     ], loans, l => (l.status === "ISSUED" ? `<button class="b s" data-ret="${l.id}">Return</button>` : "") +
       `<button class="b s" data-fine="${l.id}">Fine</button><button class="b s" data-hist="${l.id}">History</button>` +
@@ -317,6 +317,7 @@ function buildNav() {
 }
 
 function showLogin(msg) {
+  closeModal();
   $("#loginErr").textContent = msg || "";
   $("#login").hidden = false;
   $("#nav").innerHTML = "";
@@ -334,6 +335,7 @@ $("#loginForm").onsubmit = async e => {
     const data = await res.json().catch(() => ({}));
     if (!res.ok) { $("#loginErr").textContent = data.message || "Sign-in failed"; return; }
     saveSession(data);
+    closeModal();
     e.target.reset();
     $("#login").hidden = true;
     buildNav();

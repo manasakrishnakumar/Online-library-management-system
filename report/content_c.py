@@ -18,7 +18,7 @@ mean = statistics.mean
 
 CH6 = [
     ("h2", "CHAPTER 6:  RESULTS AND ANALYSIS"),
-    ("p", "This chapter reports what the finished system does. Section 6.1 shows the functional behaviour and security with live screenshots, Section 6.2 the performance measurements, Section 6.3 the fault-injection experiments, Section 6.4 the observability evidence, and Sections 6.5 to 6.7 summarise the contributions and analyse the results. Everything was measured on one machine: " + f"{HW['cpu']}, {HW['threads']} threads, {HW['ram']} memory, {HW['os']}, running all fourteen containers and the test client together. The numbers are therefore indications of behaviour, not capacity figures for production."),
+    ("p", "This chapter reports what the finished system does. Section 6.1 shows the functional behaviour and security with live screenshots, Section 6.2 the performance measurements, Section 6.3 the fault-injection experiments, Section 6.4 the observability evidence, Section 6.5 the deployment on Kubernetes, and Sections 6.6 to 6.8 summarise the contributions and analyse the results. Everything was measured on one machine: " + f"{HW['cpu']}, {HW['threads']} threads, {HW['ram']} memory, {HW['os']}, running all fourteen containers and the test client together. The numbers are therefore indications of behaviour, not capacity figures for production."),
     ("h3", "6.1  Results: Functional Verification and Screenshots"),
     ("h5", "6.1.1  Security, isolation and demonstration data"),
     ("p", "{tab:live} lists the checks made against the running system on 4 and 5 November 2026 and their outcomes. All behaved as designed."),
@@ -41,10 +41,10 @@ CH6 = [
         ["Services visible in Zipkin", "6", "api-gateway, book, member, lending, fine, notification"],
     ], "Live checks of security, isolation and demonstration data", "live"),
     ("h5", "6.1.2  Application pages"),
-    ("p", "{fig:login} shows the login page. After login, the librarian sees the dashboard ({fig:dash}): 10,000 titles, 29,996 of 30,000 copies available because four copies are on loan, 15 members, two overdue loans and 40 rupees of unpaid fines. The Books page ({fig:books}) lists the Goodbooks-10k catalogue with search and pagination; the librarian additionally sees Add, Edit and Delete."),
+    ("p", "{fig:login} shows the login page. After login, the librarian sees the dashboard ({fig:dash}): 10,000 titles, 29,996 of 30,000 copies available because four copies are on loan, 15 members, two overdue loans and 40 rupees of unpaid fines. The Books page ({fig:books}) shows the Goodbooks-10k catalogue as a grid of generated book covers, with a Table view, search and pagination; the librarian additionally sees Add, Edit and Delete. All application screenshots in this section were taken from the system running on the Kubernetes cluster of Section 6.5."),
     ("fig", "shots/login.jpg", "Login page of the web application", 4.6, "login"),
     ("fig", "shots/dashboard.jpg", "Librarian dashboard with counts taken from four services", 5.4, "dash"),
-    ("fig", "shots/books.jpg", "Books page: the Goodbooks-10k catalogue with availability per title (librarian view)", 5.4, "books"),
+    ("fig", "shots/books.jpg", "Books page in grid view: the Goodbooks-10k catalogue with availability per title (librarian view)", 5.4, "books"),
     ("p", "The Lending page ({fig:lending}) lists every loan with its status. Issue, Return, Fine, History and, for the demonstration, Make overdue are available. The History button opens the event log of a loan ({fig:history}); the loan shown went through LOAN REQUESTED, BOOK ISSUED and BOOK RETURNED, which is the saga trail described in Chapter 4."),
     ("fig", "shots/lending.jpg", "Lending page with overdue, issued and returned loans", 5.4, "lending"),
     ("fig", "shots/history.jpg", "History of loan 6: the event log of the saga", 5.4, "history"),
@@ -99,7 +99,7 @@ CH6 = [
         [k, f(v, 0), images.get(k, "-")] for k, v in sorted(memory.items(), key=lambda kv: -kv[1])
     ], "Memory of the containers after start-up (docker stats) and image size", "mem"),
     ("fig", "assets/sys_memory.png", "Idle memory of the containers", 4.6, "memfig"),
-    ("p", f"The Java services use between {f(min(memory[k] for k in ('book-service', 'member-service', 'api-gateway', 'notification-service')), 0)} and {f(memory['lending-service'], 0)} MiB each; the fourteen containers together use {f(sum(memory.values()), 0)} MiB. This is the cost of running every service in its own Java virtual machine, one of the trade-offs of the style discussed in Section 6.6."),
+    ("p", f"The Java services use between {f(min(memory[k] for k in ('book-service', 'member-service', 'api-gateway', 'notification-service')), 0)} and {f(memory['lending-service'], 0)} MiB each; the fourteen containers together use {f(sum(memory.values()), 0)} MiB. This is the cost of running every service in its own Java virtual machine, one of the trade-offs of the style discussed in Section 6.7."),
     ("h3", "6.3  Fault Tolerance and Consistency"),
     ("p", "Seven experiments, run by report/experiments.py on a freshly started system, inject a fault and check an invariant. {tab:exp} summarises them; each passed."),
     ("table", ["ID", "Fault injected", "Expected", "Observed", "Result"], [
@@ -122,19 +122,29 @@ CH6 = [
     ("p", "{fig:prom} shows that Prometheus scrapes all six Spring Boot applications every five seconds, and {fig:grafana} the provisioned Grafana dashboard. The six counters at the top are business metrics registered by the services; the screenshot was taken after the experiments of Section 6.3, so the counters include the experiment traffic (18 loans issued, 5 returned, 2 fines, 25 notifications, none pending and no event waiting in the outbox). The time series show the request rate and the 95th-percentile response time per service, the 5xx rate of the gateway (the short spike belongs to the outage experiments), the state of the three circuit breakers and the heap of every service."),
     ("fig", "shots/prom_targets.jpg", "Prometheus targets: six of six up", 5.2, "prom"),
     ("fig", "shots/grafana.jpg", "Grafana dashboard Online Library: service overview", 5.4, "grafana"),
-    ("h3", "6.5  Contributions"),
+    ("h3", "6.5  Deployment on Kubernetes"),
+    ("p", "The manifests of Section 4.4.6 were applied to a single-node minikube cluster on the same laptop (minikube 1.39.0 with the Docker driver, 6 processors, 9,000 MB of memory, Kubernetes v1.37.0 on containerd 2.3.4), after the Compose stack had been stopped. The nine images built for this project were loaded into the cluster with minikube image load; PostgreSQL, RabbitMQ and Zipkin were pulled by the cluster. kubectl apply created 27 objects: one namespace, one secret, one config map, twelve deployments and twelve services."),
+    ("p", "All 14 pods (the book and member services run two replicas each) were running and ready about five minutes after the apply command; {tab:pods} lists them as they were when the last one became ready. Seven of the fourteen pods restarted once or twice while starting. The manifests contain no start-order control, so the first start-up attempt of a service happened before the config server accepted connections (the log shows Connection refused for http://config-server:8888), the container exited and Kubernetes started it again. This is the self-healing the platform is designed to provide; init containers or start-up probes would avoid the restarts."),
+    ("table", ["Pod (deployment)", "Ready", "Restarts"], [
+        ["api-gateway", "1/1", "0"], ["book-service (2 replicas)", "1/1 and 1/1", "2 and 1"], ["config-server", "1/1", "0"], ["discovery-server", "1/1", "0"],
+        ["fine-service", "1/1", "1"], ["frontend", "1/1", "0"], ["lending-service", "1/1", "1"], ["member-service (2 replicas)", "1/1 and 1/1", "1 and 1"],
+        ["notification-service", "1/1", "1"], ["postgres", "1/1", "0"], ["rabbitmq", "1/1", "0"], ["zipkin", "1/1", "0"],
+    ], "Pods of the library namespace when all were ready", "pods"),
+    ("p", "Through a port-forward to the front-end service the same functional checks as in Section 6.1 were repeated against the cluster. The login returned a token, the catalogue contained 10,000 books (loaded into the PostgreSQL pod by the book service), the lending service had created the eight demonstration loans and the fine service the two fines, a request without a token returned 401, and a new loan for a member was issued with status ISSUED and returned again. The application screenshots of Section 6.1.2 were taken from this cluster; the infrastructure consoles of Sections 6.1.3 and 6.4 are from the Compose stack, which also runs Prometheus and Grafana."),
+    ("p", "The first deployment attempt failed for resource reasons and is worth recording. After a restart, minikube came up with only about 5.4 GB of memory while the old Compose containers also restarted by themselves, so fourteen Java pods and a second complete stack competed for processor and memory; the Kubernetes API server timed out and no pod was ready after 51 minutes. After stopping the Compose stack, recreating the cluster with 9,000 MB and capping the heap of every JVM with JAVA_TOOL_OPTIONS (256 MB for the services, 192 MB for the config and registry servers) in the manifests, all pods were ready within about five minutes (defect D12). The cluster has one node, so scheduling across nodes, load balancing between nodes and autoscaling were not exercised, and no performance figures were taken on Kubernetes."),
+    ("h3", "6.6  Contributions"),
     ("bullets", [
         f"A complete, runnable microservices system with {len(OPS)} documented operations, eight Java modules, a web front end and fourteen containers, started with one command.",
         f"A real catalogue of {DS['n']:,} books loaded into PostgreSQL, with one database and one login per service, verified by a refused cross-database read.",
         "JWT login with librarian and member roles enforced at the gateway, with internal endpoints blocked, covered by nine unit tests and live checks.",
         "A saga with compensation, idempotency keys and a recovery job, a transactional outbox and duplicate-safe consumers, verified by seven fault-injection experiments.",
         "Traces, metrics and a provisioned dashboard, including business counters.",
-        "A measured comparison of the first and the final version, and a list of eleven defects with their causes and fixes.",
+        "A measured comparison of the first and the final version, and a list of fourteen defects with their causes and fixes.",
     ]),
-    ("h3", "6.6  Overall Analysis"),
+    ("h3", "6.7  Overall Analysis"),
     ("p", f"The system meets all the quality goals set in Chapter 3 on the test machine. Reads are fast (median about {f(mean([lat[k]['p50'] for k in ep]))} ms), throughput reaches {f(peak['rps'], 0)} requests per second, and, more importantly for the topic of the course, the system behaves sensibly when parts of it fail: a broker outage delays notifications but loses none, a book-service outage turns issuing into an accepted, pending request that completes by itself, and a refused request changes nothing."),
-    ("p", f"The measurements also show the costs of the style. Fourteen containers use {f(sum(memory.values()) / 1024, 1)} GiB of memory when idle, start-up takes up to {f(max(startup.values()), 0)} seconds per Java service, and the event path is about {f(mean(fine_ms) - mean(fine_ms0), 0)} ms slower than a direct publish because of the outbox polling. The eleven defects of Section 5.4.4 are also typical of the style: three of the most instructive ones (default timeouts, a circuit breaker that counts business errors, and a stock change that is not atomic with the loan) are only visible when the system is exercised with failures, which is why the experiments were part of the work and not an afterthought."),
-    ("h3", "6.7  Summary"),
+    ("p", f"The measurements also show the costs of the style. Fourteen containers use {f(sum(memory.values()) / 1024, 1)} GiB of memory when idle, start-up takes up to {f(max(startup.values()), 0)} seconds per Java service, and the event path is about {f(mean(fine_ms) - mean(fine_ms0), 0)} ms slower than a direct publish because of the outbox polling. The fourteen defects of Section 5.4.4 are also typical of the style: three of the most instructive ones (default timeouts, a circuit breaker that counts business errors, and a stock change that is not atomic with the loan) are only visible when the system is exercised with failures, which is why the experiments were part of the work and not an afterthought."),
+    ("h3", "6.8  Summary"),
     ("p", "The running system, its screenshots and its measurements confirm that every objective of Chapter 1 was met. The next chapter states the conclusions, the limitations that remain and the directions for further work."),
 ]
 
@@ -145,7 +155,7 @@ CH7 = [
     ("p", "The syllabus topics have a concrete place in the system: SEED(S) and event storming in the design, bounded contexts and database per service in the boundaries, event sourcing in the loan history, a small CQRS-style separation in the event log and its read endpoint, Docker and Kubernetes in the deployment, and the management of change in versioned images and centrally configured settings. The most useful lessons were practical: defaults such as a ten-second connect timeout and a circuit breaker that counts every exception are unsafe for a system that is expected to survive failures, and they were found only by stopping services and measuring."),
     ("h3", "7.2  Limitations"),
     ("bullets", [
-        "Everything ran on one laptop under Docker Compose. The Kubernetes manifests were generated and checked for well-formed YAML, but they were not applied to a cluster, and Prometheus and Grafana are part of the Compose stack only.",
+        "Everything ran on one laptop. The Compose stack was used for all measurements; the Kubernetes manifests were applied only to a single-node minikube cluster (Section 6.5), which gave a functional check but no performance, multi-node or autoscaling results, and Prometheus and Grafana are part of the Compose stack only.",
         "The performance figures come from one machine on which the client and all services compete for the same processor threads; they describe behaviour, not production capacity. Thirty cycles and 200 samples per endpoint are small samples.",
         "Users are defined in the gateway configuration with demonstration passwords, the JWT secret has a demonstration default, and the database passwords are in the Compose file. There is no token revocation or refresh, and the token is kept in the browser's session storage.",
         "The business services publish their ports on the loopback interface of the host for demonstration and Swagger. In a real deployment they must be reachable only from the gateway; today the gateway is the only place where roles are enforced.",
@@ -159,7 +169,7 @@ CH7 = [
     ("bullets", [
         "Replace the demonstration login by an identity provider (OpenID Connect, for example Keycloak), validate tokens in every service as a second line of defence, and keep the services off the host network.",
         "Add server-side search and pagination with an index (a CQRS read model, for example in OpenSearch) so that the catalogue can grow far beyond 10,000 titles.",
-        "Apply the Kubernetes manifests on a cluster, add a horizontal pod autoscaler for the book service and install Prometheus and Grafana there, then repeat the measurements with several replicas.",
+        "Run the manifests on a multi-node cluster, add start-up ordering (init containers or start-up probes) and a horizontal pod autoscaler for the book service, install Prometheus and Grafana there, and repeat the measurements with several replicas.",
         "Run the experiments in continuous integration with Testcontainers, and add automated browser tests.",
         "Replace the polling relay by change-data-capture (Debezium) or use publisher confirms, and use a dedicated workflow engine for sagas as the number of steps grows.",
         "Add reservations, renewals and e-mail or SMS delivery as further services that consume the existing events without any change to the lending service.",

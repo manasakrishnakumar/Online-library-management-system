@@ -350,15 +350,19 @@
 ],
 [
 "h3",
-"6.5  Contributions"
+"6.5  Deployment on Kubernetes"
 ],
 [
 "h3",
-"6.6  Overall Analysis"
+"6.6  Contributions"
 ],
 [
 "h3",
-"6.7  Summary"
+"6.7  Overall Analysis"
+],
+[
+"h3",
+"6.8  Summary"
 ],
 [
 "h2",
@@ -572,7 +576,7 @@
 ],
 [
 "fig",
-"Figure 6.3  Books page: the Goodbooks-10k catalogue with availability per title (librarian view)"
+"Figure 6.3  Books page in grid view: the Goodbooks-10k catalogue with availability per title (librarian view)"
 ],
 [
 "fig",
@@ -692,6 +696,10 @@
 ],
 [
 "table",
+"Table 6.8  Pods of the library namespace when all were ready"
+],
+[
+"table",
 "Table A.1  First 15 rows of books.csv"
 ],
 [
@@ -749,6 +757,7 @@
 "fig:outage": "Figure 6.23",
 "fig:trace": "Figure 6.24",
 "fig:prom": "Figure 6.25",
-"fig:grafana": "Figure 6.26"
+"fig:grafana": "Figure 6.26",
+"tab:pods": "Table 6.8"
 }
 }
