@@ -1,0 +1,91 @@
+{
+ "pod_count": 16,
+ "objects": 35,
+ "seconds_to_ready": 302.2630891799927,
+ "pods": [
+  {
+   "name": "api-gateway",
+   "ready": "1/1",
+   "restarts": "0"
+  },
+  {
+   "name": "book-service (2 replicas)",
+   "ready": "1/1 and 1/1",
+   "restarts": "1 and 0"
+  },
+  {
+   "name": "config-server",
+   "ready": "1/1",
+   "restarts": "0"
+  },
+  {
+   "name": "discovery-server",
+   "ready": "1/1",
+   "restarts": "0"
+  },
+  {
+   "name": "fine-service",
+   "ready": "1/1",
+   "restarts": "0"
+  },
+  {
+   "name": "frontend",
+   "ready": "1/1",
+   "restarts": "0"
+  },
+  {
+   "name": "grafana",
+   "ready": "1/1",
+   "restarts": "0"
+  },
+  {
+   "name": "lending-service",
+   "ready": "1/1",
+   "restarts": "0"
+  },
+  {
+   "name": "member-service (2 replicas)",
+   "ready": "1/1 and 1/1",
+   "restarts": "0 and 0"
+  },
+  {
+   "name": "notification-service",
+   "ready": "1/1",
+   "restarts": "0"
+  },
+  {
+   "name": "postgres",
+   "ready": "1/1",
+   "restarts": "0"
+  },
+  {
+   "name": "prometheus",
+   "ready": "1/1",
+   "restarts": "0"
+  },
+  {
+   "name": "rabbitmq",
+   "ready": "1/1",
+   "restarts": "0"
+  },
+  {
+   "name": "zipkin",
+   "ready": "1/1",
+   "restarts": "0"
+  }
+ ],
+ "total_restarts": 1,
+ "all_ready": true,
+ "checks": {
+  "login": true,
+  "books": 10000,
+  "loans": 8,
+  "fines": 2,
+  "no_token_status": 401,
+  "issue_status": 201,
+  "return_status": 200
+ },
+ "prom_total": 6,
+ "prom_up": 6,
+ "grafana_dashboard": true
+}

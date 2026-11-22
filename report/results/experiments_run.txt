@@ -1,0 +1,31 @@
+E1 outbox during a RabbitMQ outage
+{'loans_requested': 5, 'http_status': [201, 201, 201, 201, 201], 'outbox_pending_during_outage': 5, 'seconds_until_outbox_empty_after_broker_restart': 31.650810718536377, 'notifications_created': 5}
+E2 saga with book-service down
+{'http_status_during_outage': 202, 'loan_status_when_accepted': 'PENDING', 'seconds_to_accept': 2.0992043018341064, 'seconds_until_issued_after_book_service_restart': 28.980641841888428, 'copies_before': 1, 'copies_after': 0, 'events': ['LOAN_REQUESTED', 'BOOK_ISSUED']}
+E3 saga rejection
+{'first_status': 201, 'copies_after_first': 0, 'second_status': 409, 'second_message': 'No copies available', 'loan_state': 'FAILED', 'failure_reason': 'No copies available', 'copies_after_second': 0, 'events': ['LOAN_REQUESTED', 'LOAN_FAILED']}
+E4 idempotency key on book-service
+{'copies_before': 1, 'calls_with_same_key': 3, 'copies_after': 0, 'decrement': 1}
+E5 duplicate delivery
+{'events_resent': 3, 'notifications_before': 23, 'notifications_after': 23}
+breaker closed before E7: True
+E7 rejections vs circuit breaker
+{'first_status': 201, 'rejected_statuses': [409], 'rejected_count': 12, 'next_valid_request_status': 201}
+E6 tracing
+{'trace_id': '6b03389ed7c48eecfa33c307cac1ea6d', 'spans': 7, 'services': ['api-gateway', 'book-service', 'lending-service', 'member-service'], 'duration_ms': 70.92}
+saved C:\Users\Manasa Krishnakumar\Desktop\Library Management\report\results\experiments.json
+PASS  E1 loans accepted while the broker is down
+PASS  E1 events waited in the outbox
+PASS  E1 outbox drained after the broker returned
+PASS  E1 every notification was created
+PASS  E2 loan accepted as pending
+PASS  E2 saga finished after recovery
+PASS  E2 stock reduced exactly once
+PASS  E3 second request rejected
+PASS  E3 no stock change by the rejection
+PASS  E4 same key changes stock once
+PASS  E5 duplicates ignored
+PASS  E6 trace spans four services
+PASS  E7 rejections do not open the breaker
+all 13 checks passed
+exit=0

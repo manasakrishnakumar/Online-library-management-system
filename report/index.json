@@ -69,6 +69,10 @@
 "2.1.7  Organisation and deployment"
 ],
 [
+"h5",
+"2.1.8  Recent research (2020 onwards)"
+],
+[
 "h3",
 "2.2  Summary of the Reviewed Works"
 ],
@@ -238,7 +242,7 @@
 ],
 [
 "h5",
-"5.3.3  Idempotent stock operation (BookController)"
+"5.3.3  Idempotent stock operation and server-side paging (BookController)"
 ],
 [
 "h5",
@@ -337,6 +341,10 @@
 "6.2.6  Start-up time, memory and image size"
 ],
 [
+"h5",
+"6.2.7  Repeatability and the paging endpoints"
+],
+[
 "h3",
 "6.3  Fault Tolerance and Consistency"
 ],
@@ -395,6 +403,10 @@
 [
 "h2",
 "APPENDIX B  API OPERATIONS"
+],
+[
+"h2",
+"APPENDIX C  DEMO SCRIPT"
 ]
 ],
 "captions": [
@@ -520,35 +532,39 @@
 ],
 [
 "code",
-"Listing 5.4  OutboxRelay.relay"
+"Listing 5.4  Server-side search and paging of the catalogue"
 ],
 [
 "code",
-"Listing 5.5  LoanReturnedListener.onReturned"
+"Listing 5.5  OutboxRelay.relay"
 ],
 [
 "code",
-"Listing 5.6  EventConsumer.onEvent: ignoring a message id that was already stored"
+"Listing 5.6  LoanReturnedListener.onReturned"
 ],
 [
 "code",
-"Listing 5.7  AuthFilter: token verification and role check"
+"Listing 5.7  EventConsumer.onEvent: ignoring a message id that was already stored"
 ],
 [
 "code",
-"Listing 5.8  AccessRules.allowed"
+"Listing 5.8  AuthFilter: token verification and role check"
 ],
 [
 "code",
-"Listing 5.9  Multi-stage Dockerfile used for every Java module"
+"Listing 5.9  AccessRules.allowed"
 ],
 [
 "code",
-"Listing 5.10  Compose definition of the lending service"
+"Listing 5.10  Multi-stage Dockerfile used for every Java module"
 ],
 [
 "code",
-"Listing 5.11  Unit test of the compensating step"
+"Listing 5.11  Compose definition of the lending service"
+],
+[
+"code",
+"Listing 5.12  Unit test of the compensating step"
 ],
 [
 "table",
@@ -672,7 +688,11 @@
 ],
 [
 "table",
-"Table 6.7  Fault-injection experiments"
+"Table 6.7  Median latency, throughput and event delay in the two runs"
+],
+[
+"table",
+"Table 6.8  Fault-injection experiments"
 ],
 [
 "fig",
@@ -696,7 +716,7 @@
 ],
 [
 "table",
-"Table 6.8  Pods of the library namespace when all were ready"
+"Table 6.9  Pods of the library namespace when all were ready"
 ],
 [
 "table",
@@ -709,6 +729,10 @@
 [
 "table",
 "Table B.1  Operations of the business services"
+],
+[
+"table",
+"Table C.1  Demo script"
 ]
 ],
 "numbers": {
@@ -752,12 +776,13 @@
 "fig:startfig": "Figure 6.20",
 "tab:mem": "Table 6.6",
 "fig:memfig": "Figure 6.21",
-"tab:exp": "Table 6.7",
+"tab:rerun": "Table 6.7",
+"tab:exp": "Table 6.8",
 "fig:exptimes": "Figure 6.22",
 "fig:outage": "Figure 6.23",
 "fig:trace": "Figure 6.24",
 "fig:prom": "Figure 6.25",
 "fig:grafana": "Figure 6.26",
-"tab:pods": "Table 6.8"
+"tab:pods": "Table 6.9"
 }
 }

@@ -2,12 +2,12 @@
 import csv
 import statistics
 
-from data import (COLD, DS, HW, OPS, cyc, cyc0, exp, f, fine_ms, fine_ms0, images, issue0, issue_ms, lat, lat0, loc, memory, note_ms, note_ms0, out_after,
+from data import (COLD, DS, HW, K8S, cyc23, lat23, thr23, OPS, cyc, cyc0, exp, f, fine_ms, fine_ms0, images, issue0, issue_ms, lat, lat0, loc, memory, note_ms, note_ms0, out_after,
                   out_before, return0, return_ms, startup, thr, thr0, ROOT)
 
 peak = max(thr, key=lambda r: r["rps"])
 peak0 = max(thr0, key=lambda r: r["rps"])
-ep = [k for k in lat if k.startswith("GET /api") and "10,000" not in k]
+ep = [k for k in lat if k in lat0 and k.startswith("GET /api") and "10,000" not in k]
 med_delta = [lat[k]["p50"] - lat0[k]["p50"] for k in ep]
 d, g = lat["direct GET /api/members/1 (:8082)"], lat["gateway GET /api/members/1"]
 E1, E2, E3, E4, E5, E6, E7 = (exp[k] for k in ("E1_outbox", "E2_saga_outage", "E3_rejection", "E4_idempotency", "E5_duplicates", "E6_trace", "E7_rejections"))
@@ -69,7 +69,7 @@ CH6 = [
     ("table", ["Endpoint through the gateway", "Samples", "Mean (ms)", "p50 (ms)", "p95 (ms)", "p99 (ms)", "Max (ms)"], [
         [k.replace("GET ", ""), str(v["n"]), f(v["mean"]), f(v["p50"]), f(v["p95"]), f(v["p99"]), f(v["max"])] for k, v in lat.items() if k.startswith("GET /api") or k.startswith("gateway")
     ] + [["direct to member-service (:8082), /api/members/1", str(d["n"]), f(d["mean"]), f(d["p50"]), f(d["p95"]), f(d["p99"]), f(d["max"])]], "Latency of read requests in the final system", "lat"),
-    ("p", f"Single-record reads and small lists take about {f(min(lat[k]['p50'] for k in ep))} to {f(max(lat[k]['p50'] for k in ep))} ms at the median and stay below {f(max(lat[k]['p95'] for k in ep))} ms at the 95th percentile, so the design goal of 100 ms is met with a wide margin. The search for \"potter\" is slower because the book service scans 10,000 rows with a case-insensitive match. Downloading the full catalogue ({lat['GET /api/books (10,000 rows)']['p50']:.0f} ms median) returns about 1.6 MB; the front end does this once per visit and filters in the browser, a choice that would not scale to a much larger catalogue."),
+    ("p", f"Single-record reads and small lists take about {f(min(lat[k]['p50'] for k in ep))} to {f(max(lat[k]['p50'] for k in ep))} ms at the median and stay below {f(max(lat[k]['p95'] for k in ep))} ms at the 95th percentile, so the design goal of 100 ms is met with a wide margin. The search for \"potter\" is slower because the book service scans 10,000 rows with a case-insensitive match. Downloading the full catalogue ({lat['GET /api/books (10,000 rows)']['p50']:.0f} ms median) returns about 1.6 MB, which is why the web interface no longer does it: it asks for one page of 24 books ({lat23['GET /api/books/page?size=24']['p50']:.1f} ms median), a search ({lat23['GET /api/books/page?q=potter&size=24']['p50']:.1f} ms) or the totals ({lat23['GET /api/books/stats']['p50']:.1f} ms) instead."),
     ("fig", "assets/perf_latency.png", "Median and 95th-percentile latency through the gateway", 4.8, "lat"),
     ("p", f"The gateway adds about {f(g['p50'] - d['p50'])} ms at the median ({f(d['p50'])} ms direct, {f(g['p50'])} ms through the gateway), which includes the token check and the routing."),
     ("h5", "6.2.3  Cost of PostgreSQL, login and tracing"),
@@ -100,6 +100,15 @@ CH6 = [
     ], "Memory of the containers after start-up (docker stats) and image size", "mem"),
     ("fig", "assets/sys_memory.png", "Idle memory of the containers", 4.6, "memfig"),
     ("p", f"The Java services use between {f(min(memory[k] for k in ('book-service', 'member-service', 'api-gateway', 'notification-service')), 0)} and {f(memory['lending-service'], 0)} MiB each; the fourteen containers together use {f(sum(memory.values()), 0)} MiB. This is the cost of running every service in its own Java virtual machine, one of the trade-offs of the style discussed in Section 6.7."),
+    ("h5", "6.2.7  Repeatability and the paging endpoints"),
+    ("p", f"The measurements of Sections 6.2.2 to 6.2.5 were taken on 12 November 2026 on an otherwise idle machine. After server-side paging was added, the latency, throughput and event-path measurements were repeated on 23 November 2026, this time while other programs of the same user (a game engine and a long-running Python script) were using the processor. {{tab:rerun}} compares the two runs. Median latencies stay within a few milliseconds, but the peak throughput fell from {f(peak['rps'], 0)} to {f(max(r['rps'] for r in thr23), 0)} requests per second, so under this load the design goal of 300 requests per second was not reached. The figures therefore depend strongly on the load of the machine, and the 12 November run is the better description of what the system can do on idle hardware."),
+    ("table", ["Measure", "12 Nov (idle machine)", "23 Nov (busy machine)"], [
+        [k.replace("GET ", "") + ", median (ms)", f(lat[k]["p50"]) if k in lat else "not measured", f(lat23[k]["p50"])] for k in lat23 if k.startswith("GET /api") and "10,000" not in k
+    ] + [
+        ["Peak throughput (requests per second)", f(peak["rps"], 0), f(max(r["rps"] for r in thr23), 0)],
+        ["Fine visible after a return, mean (ms)", f(mean(fine_ms)), f(mean([x["fine_visible_ms"] for x in cyc23]))],
+        ["Notification visible, mean (ms)", f(mean(note_ms)), f(mean([x["notification_visible_ms"] for x in cyc23]))],
+    ], "Median latency, throughput and event delay in the two runs", "rerun"),
     ("h3", "6.3  Fault Tolerance and Consistency"),
     ("p", "Seven experiments, run by report/experiments.py on a freshly started system, inject a fault and check an invariant. {tab:exp} summarises them; each passed."),
     ("table", ["ID", "Fault injected", "Expected", "Observed", "Result"], [
@@ -123,27 +132,23 @@ CH6 = [
     ("fig", "shots/prom_targets.jpg", "Prometheus targets: six of six up", 5.2, "prom"),
     ("fig", "shots/grafana.jpg", "Grafana dashboard Online Library: service overview", 5.4, "grafana"),
     ("h3", "6.5  Deployment on Kubernetes"),
-    ("p", "The manifests of Section 4.4.6 were applied to a single-node minikube cluster on the same laptop (minikube 1.39.0 with the Docker driver, 6 processors, 9,000 MB of memory, Kubernetes v1.37.0 on containerd 2.3.4), after the Compose stack had been stopped. The nine images built for this project were loaded into the cluster with minikube image load; PostgreSQL, RabbitMQ and Zipkin were pulled by the cluster. kubectl apply created 27 objects: one namespace, one secret, one config map, twelve deployments and twelve services."),
-    ("p", "All 14 pods (the book and member services run two replicas each) were running and ready about five minutes after the apply command; {tab:pods} lists them as they were when the last one became ready. Seven of the fourteen pods restarted once or twice while starting. The manifests contain no start-order control, so the first start-up attempt of a service happened before the config server accepted connections (the log shows Connection refused for http://config-server:8888), the container exited and Kubernetes started it again. This is the self-healing the platform is designed to provide; init containers or start-up probes would avoid the restarts."),
-    ("table", ["Pod (deployment)", "Ready", "Restarts"], [
-        ["api-gateway", "1/1", "0"], ["book-service (2 replicas)", "1/1 and 1/1", "2 and 1"], ["config-server", "1/1", "0"], ["discovery-server", "1/1", "0"],
-        ["fine-service", "1/1", "1"], ["frontend", "1/1", "0"], ["lending-service", "1/1", "1"], ["member-service (2 replicas)", "1/1 and 1/1", "1 and 1"],
-        ["notification-service", "1/1", "1"], ["postgres", "1/1", "0"], ["rabbitmq", "1/1", "0"], ["zipkin", "1/1", "0"],
-    ], "Pods of the library namespace when all were ready", "pods"),
-    ("p", "Through a port-forward to the front-end service the same functional checks as in Section 6.1 were repeated against the cluster. The login returned a token, the catalogue contained 10,000 books (loaded into the PostgreSQL pod by the book service), the lending service had created the eight demonstration loans and the fine service the two fines, a request without a token returned 401, and a new loan for a member was issued with status ISSUED and returned again. The application screenshots of Section 6.1.2 were taken from this cluster; the infrastructure consoles of Sections 6.1.3 and 6.4 are from the Compose stack, which also runs Prometheus and Grafana."),
-    ("p", "The first deployment attempt failed for resource reasons and is worth recording. After a restart, minikube came up with only about 5.4 GB of memory while the old Compose containers also restarted by themselves, so fourteen Java pods and a second complete stack competed for processor and memory; the Kubernetes API server timed out and no pod was ready after 51 minutes. After stopping the Compose stack, recreating the cluster with 9,000 MB and capping the heap of every JVM with JAVA_TOOL_OPTIONS (256 MB for the services, 192 MB for the config and registry servers) in the manifests, all pods were ready within about five minutes (defect D12). The cluster has one node, so scheduling across nodes, load balancing between nodes and autoscaling were not exercised, and no performance figures were taken on Kubernetes."),
+    ("p", f"The manifests of Section 4.4.6 were applied to a single-node minikube cluster on the same laptop (minikube 1.39.0 with the Docker driver, 6 processors, 9,000 MB of memory, Kubernetes v1.37.0 on containerd 2.3.4), after the Compose stack had been stopped. The images built for this project were loaded into the cluster with minikube image load; PostgreSQL, RabbitMQ, Zipkin, Prometheus, Grafana and the small wait image of the init containers were pulled by the cluster. kubectl apply created {K8S['objects']} objects."),
+    ("p", f"Every Java service has an init container that waits until the services it needs accept connections (the config server, the registry, PostgreSQL and RabbitMQ). All {K8S['pod_count']} pods were running and ready {K8S['seconds_to_ready']:.0f} seconds after the apply command, and {{tab:pods}} lists them. In the first version of the manifests, which had no start-order control, seven of fourteen pods restarted once or twice while starting because they came up before the config server accepted connections (log: Connection refused for http://config-server:8888); with the init containers the pods restarted {K8S['total_restarts']} times in total (defect D17)."),
+    ("table", ["Pod (deployment)", "Ready", "Restarts"], [[p["name"], p["ready"], str(p["restarts"])] for p in K8S["pods"]], "Pods of the library namespace when all were ready", "pods"),
+    ("p", f"Prometheus and Grafana are deployed from the same files as in Docker Compose. Prometheus reported {K8S['prom_up']} of {K8S['prom_total']} targets up, and Grafana loaded the provisioned dashboard with the business counters. Through a port-forward to the front-end service the functional checks of Section 6.1 were repeated against the cluster: the login returned a token, the catalogue contained {DS['n']:,} books, the lending service had created the eight demonstration loans and the fine service the two fines, a request without a token returned 401, and a new loan was issued and returned again."),
+    ("p", "The first deployment attempt, made before the init containers existed, failed for resource reasons and is worth recording. After a restart, minikube came up with only about 5.4 GB of memory while the old Compose containers also restarted by themselves, so fourteen Java pods and a second complete stack competed for processor and memory; the Kubernetes API server timed out and no pod was ready after 51 minutes. After stopping the Compose stack, recreating the cluster with 9,000 MB and capping the heap of every JVM with JAVA_TOOL_OPTIONS (256 MB for the services, 192 MB for the config and registry servers) in the manifests, all pods were ready within minutes (defect D12). The cluster has one node, so scheduling across nodes, load balancing between nodes and autoscaling were not exercised, and no performance figures were taken on Kubernetes."),
     ("h3", "6.6  Contributions"),
     ("bullets", [
         f"A complete, runnable microservices system with {len(OPS)} documented operations, eight Java modules, a web front end and fourteen containers, started with one command.",
         f"A real catalogue of {DS['n']:,} books loaded into PostgreSQL, with one database and one login per service, verified by a refused cross-database read.",
-        "JWT login with librarian and member roles enforced at the gateway, with internal endpoints blocked, covered by nine unit tests and live checks.",
+        "JWT login with librarian and member roles enforced at the gateway, with internal endpoints blocked, covered by fourteen unit tests and live checks.",
         "A saga with compensation, idempotency keys and a recovery job, a transactional outbox and duplicate-safe consumers, verified by seven fault-injection experiments.",
         "Traces, metrics and a provisioned dashboard, including business counters.",
-        "A measured comparison of the first and the final version, and a list of fourteen defects with their causes and fixes.",
+        "A measured comparison of the first and the final version, a fault-injection suite that runs in GitHub Actions, and a list of seventeen defects with their causes and fixes.",
     ]),
     ("h3", "6.7  Overall Analysis"),
-    ("p", f"The system meets all the quality goals set in Chapter 3 on the test machine. Reads are fast (median about {f(mean([lat[k]['p50'] for k in ep]))} ms), throughput reaches {f(peak['rps'], 0)} requests per second, and, more importantly for the topic of the course, the system behaves sensibly when parts of it fail: a broker outage delays notifications but loses none, a book-service outage turns issuing into an accepted, pending request that completes by itself, and a refused request changes nothing."),
-    ("p", f"The measurements also show the costs of the style. Fourteen containers use {f(sum(memory.values()) / 1024, 1)} GiB of memory when idle, start-up takes up to {f(max(startup.values()), 0)} seconds per Java service, and the event path is about {f(mean(fine_ms) - mean(fine_ms0), 0)} ms slower than a direct publish because of the outbox polling. The fourteen defects of Section 5.4.4 are also typical of the style: three of the most instructive ones (default timeouts, a circuit breaker that counts business errors, and a stock change that is not atomic with the loan) are only visible when the system is exercised with failures, which is why the experiments were part of the work and not an afterthought."),
+    ("p", f"The system meets all the quality goals set in Chapter 3 on the test machine. Reads are fast (median about {f(mean([lat[k]['p50'] for k in ep]))} ms), throughput reaches {f(peak['rps'], 0)} requests per second on an idle machine ({f(max(r['rps'] for r in thr23), 0)} when other programs were busy), and, more importantly for the topic of the course, the system behaves sensibly when parts of it fail: a broker outage delays notifications but loses none, a book-service outage turns issuing into an accepted, pending request that completes by itself, and a refused request changes nothing."),
+    ("p", f"The measurements also show the costs of the style. Fourteen containers use {f(sum(memory.values()) / 1024, 1)} GiB of memory when idle, start-up takes up to {f(max(startup.values()), 0)} seconds per Java service, and the event path is about {f(mean(fine_ms) - mean(fine_ms0), 0)} ms slower than a direct publish because of the outbox polling. The seventeen defects of Section 5.4.4 are also typical of the style: three of the most instructive ones (default timeouts, a circuit breaker that counts business errors, and a stock change that is not atomic with the loan) are only visible when the system is exercised with failures, which is why the experiments were part of the work and not an afterthought."),
     ("h3", "6.8  Summary"),
     ("p", "The running system, its screenshots and its measurements confirm that every objective of Chapter 1 was met. The next chapter states the conclusions, the limitations that remain and the directions for further work."),
 ]
@@ -155,22 +160,22 @@ CH7 = [
     ("p", "The syllabus topics have a concrete place in the system: SEED(S) and event storming in the design, bounded contexts and database per service in the boundaries, event sourcing in the loan history, a small CQRS-style separation in the event log and its read endpoint, Docker and Kubernetes in the deployment, and the management of change in versioned images and centrally configured settings. The most useful lessons were practical: defaults such as a ten-second connect timeout and a circuit breaker that counts every exception are unsafe for a system that is expected to survive failures, and they were found only by stopping services and measuring."),
     ("h3", "7.2  Limitations"),
     ("bullets", [
-        "Everything ran on one laptop. The Compose stack was used for all measurements; the Kubernetes manifests were applied only to a single-node minikube cluster (Section 6.5), which gave a functional check but no performance, multi-node or autoscaling results, and Prometheus and Grafana are part of the Compose stack only.",
+        "Everything ran on one laptop. The Compose stack was used for all measurements; the Kubernetes manifests were applied only to a single-node minikube cluster (Section 6.5), which gave a functional check but no performance, multi-node or autoscaling results.",
         "The performance figures come from one machine on which the client and all services compete for the same processor threads; they describe behaviour, not production capacity. Thirty cycles and 200 samples per endpoint are small samples.",
-        "Users are defined in the gateway configuration with demonstration passwords, the JWT secret has a demonstration default, and the database passwords are in the Compose file. There is no token revocation or refresh, and the token is kept in the browser's session storage.",
+        "Users are defined in the gateway configuration with demonstration passwords, the JWT secret has a demonstration default, and the database passwords are in the Compose file. Tokens are refreshed automatically and users can change their password, but a changed password is kept in memory only (it is lost when the gateway restarts), there is no token revocation, and the token is kept in the browser's session storage.",
         "The business services publish their ports on the loopback interface of the host for demonstration and Swagger. In a real deployment they must be reachable only from the gateway; today the gateway is the only place where roles are enforced.",
         "The outbox relay polls every 300 milliseconds and does not use publisher confirms. With several lending instances an event could be sent twice; the consumers tolerate this, but the design has not been tested with more than one lending instance.",
         "A PENDING loan stays pending as long as the book service is unavailable; there is no limit on the number of recovery attempts and no notification to the librarian.",
         "PostgreSQL runs as one instance without replication or backups, and in the Kubernetes manifest on a volume that is lost when the pod is removed.",
-        "The dataset has no genres (the category is the publication era), the number of copies per title is generated, and the front end loads and filters the whole catalogue in the browser.",
-        "The checks of the user interface were made by hand; there are no automated browser tests, and the experiments are scripts, not part of a continuous-integration run.",
+        "The dataset has no genres (the category is the publication era) and the number of copies per title is generated.",
+        "The checks of the user interface were made by hand; there are no automated browser tests.",
     ]),
     ("h3", "7.3  Future Scope"),
     ("bullets", [
-        "Replace the demonstration login by an identity provider (OpenID Connect, for example Keycloak), validate tokens in every service as a second line of defence, and keep the services off the host network.",
-        "Add server-side search and pagination with an index (a CQRS read model, for example in OpenSearch) so that the catalogue can grow far beyond 10,000 titles.",
-        "Run the manifests on a multi-node cluster, add start-up ordering (init containers or start-up probes) and a horizontal pod autoscaler for the book service, install Prometheus and Grafana there, and repeat the measurements with several replicas.",
-        "Run the experiments in continuous integration with Testcontainers, and add automated browser tests.",
+        "Replace the demonstration login by an identity provider (OpenID Connect, for example Keycloak) that stores users and passwords persistently, validate tokens in every service as a second line of defence, and keep the services off the host network.",
+        "Add a search index (a CQRS read model, for example in OpenSearch) for ranked and typo-tolerant search on a catalogue far larger than 10,000 titles.",
+        "Run the manifests on a multi-node cluster, add a horizontal pod autoscaler for the book service, and repeat the measurements with several replicas.",
+        "Add automated browser tests and Testcontainers-based integration tests.",
         "Replace the polling relay by change-data-capture (Debezium) or use publisher confirms, and use a dedicated workflow engine for sagas as the number of steps grows.",
         "Add reservations, renewals and e-mail or SMS delivery as further services that consume the existing events without any change to the lending service.",
     ]),
@@ -204,8 +209,22 @@ REFS = [
     "OpenAPI Initiative, \"OpenAPI Specification v3.0,\" spec.openapis.org, accessed Nov. 2026.",
     "Docker Inc., \"Docker and Docker Compose documentation,\" docs.docker.com, accessed Nov. 2026.",
     "Prometheus Authors, Grafana Labs and OpenZipkin, \"Prometheus, Grafana and Zipkin documentation,\" accessed Nov. 2026.",
+    "S. Aydin and C. Cebi, \"Comparison of Choreography vs Orchestration Based Saga Patterns in Microservices,\" in Proc. 2022 Int. Conf. Electrical, Computer and Energy Technologies (ICECET), 2022, doi: 10.1109/ICECET55527.2022.9872665.",
+    "A. Megargel, C. Poskitt and V. Shankararaman, \"Microservices Orchestration vs. Choreography: A Decision Framework,\" in Proc. 25th IEEE Int. Enterprise Distributed Object Computing Conf. (EDOC), 2021, pp. 134-141, doi: 10.1109/EDOC52215.2021.00024.",
+    "E. Daraghmi, C.-P. Zhang and S.-M. Yuan, \"Enhancing Saga Pattern for Distributed Transactions within a Microservices Architecture,\" Applied Sciences, vol. 12, no. 12, p. 6242, 2022, doi: 10.3390/app12126242.",
+    "M. Mazzara, N. Dragoni, A. Bucchiarone, A. Giaretta, S. T. Larsen and S. Dustdar, \"Microservices: Migration of a Mission Critical System,\" IEEE Trans. Services Computing, vol. 14, no. 5, pp. 1464-1477, 2021, doi: 10.1109/TSC.2018.2889087.",
+    "X. Zhou, X. Peng, T. Xie, J. Sun, C. Ji, W. Li and D. Ding, \"Fault Analysis and Debugging of Microservice Systems: Industrial Survey, Benchmark System, and Empirical Study,\" IEEE Trans. Software Engineering, vol. 47, no. 2, pp. 243-260, 2021, doi: 10.1109/TSE.2018.2887384.",
+    "J. Bogner, J. Fritzsch, S. Wagner and A. Zimmermann, \"Industry practices and challenges for the evolvability assurance of microservices,\" Empirical Software Engineering, vol. 26, no. 5, 2021, doi: 10.1007/s10664-021-09999-9.",
+    "H. Vural and M. Koyuncu, \"Does Domain-Driven Design Lead to Finding the Optimal Modularity of a Microservice?\" IEEE Access, vol. 9, pp. 32721-32733, 2021, doi: 10.1109/ACCESS.2021.3060895.",
+    "A. Singjai, U. Zdun and O. Zimmermann, \"Practitioner Views on the Interrelation of Microservice APIs and Domain-Driven Design: A Grey Literature Study Based on Grounded Theory,\" in Proc. 18th IEEE Int. Conf. Software Architecture (ICSA), 2021, pp. 25-35, doi: 10.1109/ICSA51549.2021.00011.",
+    "N. Stanley S A and S. Sebastian, \"Circuit Breaker: A Resilience Mechanism for Cloud Native Architecture,\" in Proc. 2023 Global Conf. Information Technologies and Communications (GCITC), 2023, pp. 1-8, doi: 10.1109/GCITC60406.2023.10426195.",
+    "K. Sivakumar, J. Sebastian and P. S. Thilagam, \"Self-Adaptive Circuit Breaker Open-State Interval for Enhancing Resiliency of Microservices,\" in Proc. 2024 OITS Int. Conf. Information Technology (OCIT), 2024, pp. 754-759, doi: 10.1109/OCIT65031.2024.00136.",
+    "B. Li, X. Peng, Q. Xiang, H. Wang, T. Xie et al., \"Enjoy your observability: an industrial survey of microservice tracing and analysis,\" Empirical Software Engineering, vol. 27, no. 1, 2022, doi: 10.1007/s10664-021-10063-9.",
+    "M. Usman, S. Ferlin, A. Brunstrom and J. Taheri, \"A Survey on Observability of Distributed Edge & Container-Based Microservices,\" IEEE Access, vol. 10, pp. 86904-86919, 2022, doi: 10.1109/ACCESS.2022.3193102.",
+    "M. Soualhia and F. Wuhib, \"Automated Traces-based Anomaly Detection and Root Cause Analysis in Cloud Platforms,\" in Proc. 2022 IEEE Int. Conf. Cloud Engineering (IC2E), 2022, pp. 253-260, doi: 10.1109/IC2E55432.2022.00034.",
+    "A. Barabanov and D. Makrushin, \"Authentication and Authorization in Microservice-Based Systems: Survey of Architecture Patterns,\" Voprosy Kiberbezopasnosti, no. 4(38), pp. 32-43, 2020, doi: 10.21681/2311-3456-2020-04-32-43.",
 ]
-REF_NOTE = "Note: the entries were written from the authors' knowledge of the works. Volume, page and edition details should be checked against the publisher's page before the report is submitted."
+REF_NOTE = "Note: entries [1] to [25] were written from the authors' knowledge of the works and their volume, page and edition details should be checked against the publisher's page before submission. Entries [26] to [39] (published 2020 or later) were checked against Crossref records for title, authors, venue, year and DOI."
 
 
 def appendix_rows():

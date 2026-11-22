@@ -5,7 +5,7 @@ import java.util.regex.Pattern;
 /** Role-based access rules enforced at the gateway. Librarians may do everything except call internal endpoints. */
 public final class AccessRules {
     private static final Pattern INTERNAL = Pattern.compile("^/api/books/\\d+/(borrow|return)$");
-    private static final Pattern BOOK_READ = Pattern.compile("^/api/books(/search|/\\d+)?$");
+    private static final Pattern BOOK_READ = Pattern.compile("^/api/books(/search|/page|/stats|/\\d+)?$");
     private static final Pattern OWN = Pattern.compile("^/api/(members|loans/member|fines/member|notifications/member)/(\\d+)$");
 
     private AccessRules() {}

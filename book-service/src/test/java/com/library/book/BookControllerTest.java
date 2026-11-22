@@ -3,7 +3,13 @@ package com.library.book;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import org.mockito.ArgumentCaptor;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
@@ -46,6 +52,38 @@ class BookControllerTest {
         when(ops.existsById("loan-1-borrow")).thenReturn(false, true);
         assertEquals(2, controller.borrow(1L, "loan-1-borrow").getAvailableCopies());
         assertEquals(2, controller.borrow(1L, "loan-1-borrow").getAvailableCopies());
+    }
+
+    @Test
+    void pageCapsTheSizeAndReturnsTotals() {
+        Book b = new Book("The Hobbit", "J.R.R. Tolkien", "618260307", "Classic", 5);
+        when(repo.searchPage(eq("tolkien"), any(Pageable.class))).thenReturn(new PageImpl<>(List.of(b), PageRequest.of(0, 100), 250));
+        Map<String, Object> r = controller.page("  tolkien ", 0, 5000);
+        ArgumentCaptor<Pageable> pageable = ArgumentCaptor.forClass(Pageable.class);
+        verify(repo).searchPage(eq("tolkien"), pageable.capture());
+        assertEquals(100, pageable.getValue().getPageSize());
+        assertEquals(250L, r.get("total"));
+        assertEquals(3, r.get("pages"));
+    }
+
+    @Test
+    void negativePageNumberIsTreatedAsFirstPage() {
+        when(repo.searchPage(any(), any(Pageable.class))).thenReturn(new PageImpl<>(List.of(), PageRequest.of(0, 24), 0));
+        Map<String, Object> r = controller.page("", -4, 24);
+        assertEquals(0, r.get("page"));
+        assertEquals(1, r.get("pages"));
+    }
+
+    @Test
+    void statsComeFromTheDatabaseTotals() {
+        BookStats st = mock(BookStats.class);
+        when(st.getTitles()).thenReturn(10000L);
+        when(st.getTotalCopies()).thenReturn(30000L);
+        when(st.getAvailableCopies()).thenReturn(29996L);
+        when(repo.stats()).thenReturn(st);
+        Map<String, Object> r = controller.stats();
+        assertEquals(10000L, r.get("titles"));
+        assertEquals(29996L, r.get("availableCopies"));
     }
 
     @Test

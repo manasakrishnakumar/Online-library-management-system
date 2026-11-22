@@ -27,6 +27,13 @@ exp = J("experiments.json")
 loc = J("loc.json")
 ds = J("dataset_info.json")
 COLD = J("coldstart.json")
+try:
+    K8S = J("k8s_run.json")
+except FileNotFoundError:        # the Kubernetes check has not been run yet: the report must not be built from this placeholder
+    K8S = {"missing": True, "pods": [], "pod_count": 0, "total_restarts": 0, "objects": 0, "seconds_to_ready": 0, "prom_up": 0, "prom_total": 0}
+lat23 = J("latency_nov23.json")
+thr23 = J("throughput_nov23.json")
+cyc23 = J("cycles_nov23.json")
 
 HW = {"cpu": "AMD Ryzen 7 260 with Radeon 780M Graphics", "cores": 8, "threads": 16, "ram": "23.3 GB", "os": "Windows 11 Home (build 26300)",
       "docker": "Docker Engine 29.9.2, Compose 5.6.1", "docker_ram": "11.33 GiB visible to the Docker VM"}

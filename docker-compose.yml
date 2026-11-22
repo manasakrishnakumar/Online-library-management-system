@@ -105,7 +105,7 @@ services:
       args:
         MODULE: api-gateway
     ports:
-      - "8080:8080"
+      - "${GATEWAY_PORT:-8080}:8080"      # set GATEWAY_PORT if 8080 is already in use on your machine
     environment:
       <<: *app-env
       JWT_SECRET: ${JWT_SECRET:-library-demo-secret-library-demo-secret-2026}

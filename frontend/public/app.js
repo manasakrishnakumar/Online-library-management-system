@@ -73,19 +73,19 @@ const isOverdue = l => l.status === "ISSUED" && l.dueDate < today();
 const pages = {};
 
 pages.dashboard = async view => {
-  const [books, members, loans, fines] = await Promise.all([api("GET", "/api/books"), api("GET", "/api/members"), api("GET", "/api/loans"), api("GET", "/api/fines")]);
+  const [stats, members, loans, fines] = await Promise.all([api("GET", "/api/books/stats"), api("GET", "/api/members"), api("GET", "/api/loans"), api("GET", "/api/fines")]);
   const active = loans.filter(l => l.status === "ISSUED");
   const overdue = active.filter(isOverdue);
   const open = fines.filter(f => !f.paid);
   const unpaid = open.reduce((s, f) => s + Number(f.amount), 0);
-  const total = books.reduce((s, b) => s + b.totalCopies, 0), avail = books.reduce((s, b) => s + b.availableCopies, 0);
+  const total = stats.totalCopies, avail = stats.availableCopies;
   const pct = total ? Math.round(avail / total * 100) : 0;
   const nameOf = id => (members.find(m => m.id === id) || {}).name || "Member #" + id;
   view.innerHTML = `<section class="hero"><div><h2>Welcome back, ${esc(firstName())}</h2>
       <p>${active.length} book${active.length === 1 ? " is" : "s are"} out on loan and ${overdue.length} ${overdue.length === 1 ? "is" : "are"} overdue. ${open.length ? "Unpaid fines: ₹" + unpaid.toFixed(2) + "." : "No unpaid fines."}</p></div>
       <div class="ring" style="--p:${pct}"><span>${pct}%<small>in stock</small></span></div></section>
     <div class="cards">
-      ${stat("&#128218;", books.length.toLocaleString(), "Book titles")}
+      ${stat("&#128218;", Number(stats.titles).toLocaleString(), "Book titles")}
       ${stat("&#128214;", avail.toLocaleString() + " / " + total.toLocaleString(), "Copies available", "good")}
       ${stat("&#128101;", members.length, "Members")}
       ${stat("&#128257;", active.length, "Books on loan", "warn")}
@@ -105,14 +105,17 @@ pages.dashboard = async view => {
 
 pages.books = async view => {
   const ro = !isLibrarian();
-  let books = await api("GET", "/api/books");
-  let q = "", page = 0, mode = "grid";
+  let q = "", page = 0, mode = "grid", data = { items: [], total: 0, pages: 1 }, timer = null, seq = 0;
+  const load = async () => {
+    const my = ++seq;
+    const size = mode === "grid" ? 24 : 25;
+    const r = await api("GET", `/api/books/page?q=${encodeURIComponent(q)}&page=${page}&size=${size}`);
+    if (my !== seq) return;                    // a newer search is already running
+    data = r;
+    draw();
+  };
   const draw = () => {
-    const PAGE = mode === "grid" ? 24 : 25;
-    const all = books.filter(b => (b.title + " " + b.author + " " + b.isbn + " " + (b.category || "")).toLowerCase().includes(q.toLowerCase()));
-    const pages = Math.max(1, Math.ceil(all.length / PAGE));
-    page = Math.min(page, pages - 1);
-    const rows = all.slice(page * PAGE, page * PAGE + PAGE);
+    const rows = data.items;
     const avail = b => b.availableCopies > 0 ? `<span class="tag ok">${b.availableCopies} of ${b.totalCopies} in</span>` : `<span class="tag bad">All out</span>`;
     const acts = b => ro ? "" : `<div class="acts"><button class="b s" data-edit="${b.id}">Edit</button><button class="b s d" data-del="${b.id}">Delete</button></div>`;
     let content;
@@ -127,18 +130,18 @@ pages.books = async view => {
       ], rows, ro ? null : b => `<button class="b s" data-edit="${b.id}">Edit</button><button class="b s d" data-del="${b.id}">Delete</button>`);
     }
     $("#list").innerHTML = content +
-      `<div class="pager"><button class="b s" data-pg="-1" ${page === 0 ? "disabled" : ""}>&larr; Previous</button><span>Page ${page + 1} of ${pages} &middot; ${all.length.toLocaleString()} books</span><button class="b s" data-pg="1" ${page >= pages - 1 ? "disabled" : ""}>Next &rarr;</button></div>`;
+      `<div class="pager"><button class="b s" data-pg="-1" ${data.page === 0 ? "disabled" : ""}>&larr; Previous</button><span>Page ${data.page + 1} of ${data.pages} &middot; ${Number(data.total).toLocaleString()} books</span><button class="b s" data-pg="1" ${data.page >= data.pages - 1 ? "disabled" : ""}>Next &rarr;</button></div>`;
   };
   view.innerHTML = `<div class="bar"><input id="q" type="search" placeholder="Search title, author, category or ISBN"><span class="grow"></span>
     <div class="seg"><button data-mode="grid" class="on">Grid</button><button data-mode="table">Table</button></div>${ro ? "" : '<button class="b p" id="add">+ Add book</button>'}</div><div id="list"></div>`;
-  draw();
-  $("#q").oninput = e => { q = e.target.value; page = 0; draw(); };
-  view.querySelector(".seg").onclick = e => {
+  await load();
+  $("#q").oninput = e => { q = e.target.value; page = 0; clearTimeout(timer); timer = setTimeout(safe(load), 250); };
+  view.querySelector(".seg").onclick = safe(async e => {
     if (!e.target.dataset.mode) return;
     mode = e.target.dataset.mode; page = 0;
     view.querySelectorAll(".seg button").forEach(b => b.classList.toggle("on", b === e.target));
-    draw();
-  };
+    await load();
+  });
   const form = (title, b) => {
     const s = openModal(title, `<form id="f">
       <label>Title<input name="title" required value="${esc(b?.title)}"></label>
@@ -158,8 +161,8 @@ pages.books = async view => {
   if (!ro) $("#add").onclick = () => form("Add book");
   $("#list").onclick = safe(async e => {
     const edit = e.target.dataset.edit, del = e.target.dataset.del;
-    if (e.target.dataset.pg) { page += +e.target.dataset.pg; draw(); window.scrollTo({ top: 0, behavior: "smooth" }); return; }
-    if (edit) form("Edit book", books.find(b => b.id == edit));
+    if (e.target.dataset.pg) { page += +e.target.dataset.pg; await load(); window.scrollTo({ top: 0, behavior: "smooth" }); return; }
+    if (edit) form("Edit book", data.items.find(b => b.id == edit));
     if (del && confirm("Delete this book?")) { await api("DELETE", "/api/books/" + del); toast("Book deleted"); route(); }
   });
 };
@@ -195,9 +198,7 @@ pages.members = async view => {
 };
 
 pages.lending = async view => {
-  const [books, members, loans] = await Promise.all([api("GET", "/api/books"), api("GET", "/api/members"), api("GET", "/api/loans")]);
-  const titleOf = id => (books.find(b => b.id === id) || {}).title || "Book #" + id;
-  const nameOf = id => (members.find(m => m.id === id) || {}).name || "Member #" + id;
+  const [members, loans] = await Promise.all([api("GET", "/api/members"), api("GET", "/api/loans")]);
   loans.sort((a, b) => b.id - a.id);
   view.innerHTML = `<div class="bar"><span class="grow"></span><button class="b p" id="issue">Issue a book</button></div>
     <div class="panel">${table([
@@ -208,18 +209,26 @@ pages.lending = async view => {
       `<button class="b s" data-fine="${l.id}">Fine</button><button class="b s" data-hist="${l.id}">History</button>` +
       (l.status === "ISSUED" ? `<button class="b s" data-late="${l.id}" title="Demo: make this loan 20 days overdue">Make overdue</button>` : ""))}</div>`;
   $("#issue").onclick = () => {
-    const free = books.filter(b => b.availableCopies > 0), act = members.filter(m => m.active);
-    const opts = (term) => free.filter(b => b.title.toLowerCase().includes(term.toLowerCase())).slice(0, 50)
-      .map(b => `<option value="${b.id}">${esc(b.title)} (${b.availableCopies} left)</option>`).join("");
+    const act = members.filter(m => m.active);
     const s = openModal("Issue a book", `<form id="f">
-      <label>Book (type to search, showing up to 50)<input id="bq" placeholder="e.g. Hobbit"><select name="bookId" id="bsel" required>${opts("")}</select></label>
+      <label>Book (type to search, showing up to 50 available titles)<input id="bq" placeholder="e.g. Hobbit"><select name="bookId" id="bsel" required><option value="">Loading...</option></select></label>
       <label>Member<select name="memberId" required>${act.map(m => `<option value="${m.id}">${esc(m.name)}</option>`).join("")}</select></label>
       <div class="row"><button type="button" class="b" id="cancel">Cancel</button><button class="b p">Issue</button></div></form>`);
     $("#cancel", s).onclick = closeModal;
-    $("#bq", s).oninput = e => { $("#bsel", s).innerHTML = opts(e.target.value); };
+    let bookTimer = null, bookSeq = 0;
+    const findBooks = safe(async () => {
+      const my = ++bookSeq;
+      const r = await api("GET", `/api/books/page?q=${encodeURIComponent($("#bq", s).value)}&size=50`);
+      if (my !== bookSeq) return;
+      const free = r.items.filter(b => b.availableCopies > 0);
+      $("#bsel", s).innerHTML = free.length ? free.map(b => `<option value="${b.id}">${esc(b.title)} (${b.availableCopies} left)</option>`).join("") : `<option value="">No available title matches</option>`;
+    });
+    $("#bq", s).oninput = () => { clearTimeout(bookTimer); bookTimer = setTimeout(findBooks, 250); };
+    findBooks();
     $("#f", s).onsubmit = safe(async e => {
       e.preventDefault();
       const d = Object.fromEntries(new FormData(e.target));
+      if (!d.bookId) { toast("Choose a book first", true); return; }
       const loan = await api("POST", "/api/loans/issue", { bookId: +d.bookId, memberId: +d.memberId });
       closeModal(); toast(loan.status === "PENDING" ? "Accepted: a service is unavailable, the loan will complete automatically" : "Issued. Due on " + loan.dueDate); route();
     });
@@ -309,11 +318,43 @@ const NAV = {
   MEMBER: [["books", "Books", "&#128218;"], ["myloans", "My loans", "&#128214;"], ["myfines", "My fines", "&#128176;"], ["mynotes", "My notifications", "&#128276;"]]
 };
 
+const tokenExp = t => { try { return JSON.parse(atob(t.split(".")[1].replace(/-/g, "+").replace(/_/g, "/"))).exp * 1000; } catch { return 0; } };
+let refreshTimer = null;
+function scheduleRefresh() {
+  clearInterval(refreshTimer);
+  refreshTimer = setInterval(async () => {
+    if (!session) return;
+    if (tokenExp(session.token) - Date.now() > 10 * 60 * 1000) return;      // refresh when less than ten minutes are left
+    try {
+      const r = await fetch("/api/auth/refresh", { method: "POST", headers: { Authorization: "Bearer " + session.token } });
+      if (r.ok) { const d = await r.json(); saveSession(d); }
+    } catch { /* the next tick tries again */ }
+  }, 60 * 1000);
+}
+
+function passwordDialog() {
+  const s = openModal("Change password", `<form id="f">
+    <label>Current password<input name="oldPassword" type="password" autocomplete="current-password" required></label>
+    <label>New password (at least 8 characters)<input name="newPassword" type="password" autocomplete="new-password" minlength="8" required></label>
+    <label>Repeat new password<input name="again" type="password" autocomplete="new-password" minlength="8" required></label>
+    <div class="row"><button type="button" class="b" id="cancel">Cancel</button><button class="b p">Change</button></div></form>`);
+  $("#cancel", s).onclick = closeModal;
+  $("#f", s).onsubmit = safe(async e => {
+    e.preventDefault();
+    const d = Object.fromEntries(new FormData(e.target));
+    if (d.newPassword !== d.again) { toast("The new passwords do not match", true); return; }
+    await api("POST", "/api/auth/change-password", { oldPassword: d.oldPassword, newPassword: d.newPassword });
+    closeModal(); toast("Password changed");
+  });
+}
+
 function buildNav() {
   const items = NAV[session.role] || [];
   $("#nav").innerHTML = items.map(([r, t, i]) => `<a href="#/${r}" data-r="${r}"><span class="ni">${i}</span>${esc(t)}</a>`).join("");
-  $("#who").innerHTML = `<div class="av">${esc(firstName().charAt(0))}</div><div class="nm"><b>${esc(session.username)}</b><span>${esc(session.role.toLowerCase())}</span></div><button class="b s" id="logout">Sign out</button>`;
+  $("#who").innerHTML = `<div class="av">${esc(firstName().charAt(0))}</div><div class="nm"><b>${esc(session.username)}</b><span>${esc(session.role.toLowerCase())}</span></div><button class="b s" id="chpw">Password</button><button class="b s" id="logout">Sign out</button>`;
+  $("#chpw").onclick = passwordDialog;
   $("#logout").onclick = () => { saveSession(null); showLogin(""); };
+  scheduleRefresh();
 }
 
 function showLogin(msg) {

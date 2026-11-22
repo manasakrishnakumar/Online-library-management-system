@@ -14,7 +14,7 @@ from datetime import datetime, timezone
 
 import requests
 
-GW = "http://localhost:8080"          # API gateway
+GW = "http://localhost:" + os.environ.get("GATEWAY_PORT", "8080")          # API gateway
 UI = "http://localhost:3000"          # frontend (nginx -> gateway)
 OUT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "results")
 os.makedirs(OUT, exist_ok=True)
@@ -57,7 +57,10 @@ def latency():
            ("GET /api/loans", GW + "/api/loans"),
            ("GET /api/fines", GW + "/api/fines"),
            ("GET /api/notifications", GW + "/api/notifications"),
-           ("GET /api/books (10,000 rows)", GW + "/api/books")]
+           ("GET /api/books (10,000 rows)", GW + "/api/books"),
+           ("GET /api/books/page?size=24", GW + "/api/books/page?size=24"),
+           ("GET /api/books/page?q=potter&size=24", GW + "/api/books/page?q=potter&size=24"),
+           ("GET /api/books/stats", GW + "/api/books/stats")]
     res = {}
     for name, url in eps:
         for _ in range(10):                       # warm-up, not counted

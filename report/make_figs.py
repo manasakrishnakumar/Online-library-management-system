@@ -89,7 +89,7 @@ def dataset_figs():
 # ---------------------------------------------------------------- performance
 def perf_figs():
     lat, base = J("latency.json"), J("latency_h2_baseline.json")
-    names = [k for k in lat if k.startswith("GET /api") and "10,000" not in k]
+    names = [k for k in lat if k in base and k.startswith("GET /api") and "10,000" not in k]
     short = lambda n: n.replace("GET ", "").replace("/api/", "")
     fig, ax = plt.subplots(figsize=(6.6, 3.6))
     x = range(len(names))

@@ -1,0 +1,23 @@
+== latency
+GET /api/books/1 10.401500003354158
+GET /api/books/search?q=potter 26.63429999665823
+GET /api/members 12.618200002179947
+GET /api/loans 11.811299998953473
+GET /api/fines 14.5360000024084
+GET /api/notifications 14.670600001409184
+GET /api/books (10,000 rows) 85.39380000001984
+GET /api/books/page?size=24 20.60390000406187
+GET /api/books/page?q=potter&size=24 61.431699999957345
+GET /api/books/stats 12.063900001521688
+== throughput
+{'workers': 1, 'requests': 561, 'errors': 0, 'rps': 93.5}
+{'workers': 2, 'requests': 1060, 'errors': 0, 'rps': 176.66666666666666}
+{'workers': 4, 'requests': 1455, 'errors': 0, 'rps': 242.5}
+{'workers': 8, 'requests': 1663, 'errors': 0, 'rps': 277.1666666666667}
+{'workers': 16, 'requests': 1376, 'errors': 0, 'rps': 229.33333333333334}
+{'workers': 32, 'requests': 1446, 'errors': 0, 'rps': 241.0}
+== cycles
+cycles done 30
+== outage
+outage: first success after restart (s): 49.06421613693237
+exit=0

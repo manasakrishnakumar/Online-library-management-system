@@ -10,7 +10,7 @@ import requests
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT = os.path.join(ROOT, "report", "results", "experiments.json")
-GW = "http://localhost:8080"
+GW = "http://localhost:" + os.environ.get("GATEWAY_PORT", "8080")
 BOOK_DIRECT = "http://localhost:8081"
 
 
@@ -39,8 +39,16 @@ def post(path, body=None):
     return requests.post(GW + path, headers=H, json=body, timeout=30)
 
 
-def book(i):
-    return get(f"/api/books/{i}").json()
+def book(i, timeout=150):
+    """Read a book through the gateway; right after a restart the gateway may still hold the old address, so retry for a while."""
+    t0 = time.time()
+    while True:
+        r = get(f"/api/books/{i}")
+        if r.status_code == 200:
+            return r.json()
+        if time.time() - t0 > timeout:
+            r.raise_for_status()
+        time.sleep(1)
 
 
 def wait(cond, timeout=180, step=0.5):
@@ -64,6 +72,25 @@ def quiet():
 
 
 quiet()
+
+# ------------------------------------------------------------ helper: a stable system before the breaker experiment
+def wait_breaker_closed(timeout=120):
+    """After E2 stopped the book service, the breaker is half-open for a short while and may answer 202 to a few requests.
+    Send valid probe requests (fresh books) until it is CLOSED again, so E7 starts from a recovered system."""
+    t0 = time.time()
+    k = 0
+    while time.time() - t0 < timeout:
+        try:
+            state = requests.get("http://localhost:8083/actuator/circuitbreakers", timeout=5).json()["circuitBreakers"]["bookService"]["state"]
+        except Exception:
+            state = "UNKNOWN"
+        if state == "CLOSED":
+            return True
+        post("/api/loans/issue", {"bookId": 1300 + k, "memberId": 10})
+        k += 1
+        time.sleep(1)
+    return False
+
 
 # ------------------------------------------------------------ E1 outbox: broker outage
 print("E1 outbox during a RabbitMQ outage")
@@ -102,6 +129,10 @@ res["E2_saga_outage"] = {"http_status_during_outage": r.status_code, "loan_statu
                          "seconds_until_issued_after_book_service_restart": done, "copies_before": before, "copies_after": after, "events": ev}
 print(res["E2_saga_outage"])
 
+quiet()
+res["breaker_closed_before_E3"] = wait_breaker_closed()
+quiet()
+
 # ------------------------------------------------------------ E3 saga: rejection without side effects
 print("E3 saga rejection")
 gid = 5   # The Great Gatsby, one copy
@@ -127,6 +158,8 @@ requests.put(f"{BOOK_DIRECT}/api/books/{bid}/return", headers={"Idempotency-Key"
 res["E4_idempotency"] = {"copies_before": c0, "calls_with_same_key": 3, "copies_after": c1, "decrement": c0 - c1}
 print(res["E4_idempotency"])
 
+quiet()
+
 # ------------------------------------------------------------ E5 duplicate event delivery
 print("E5 duplicate delivery")
 n0 = len(get("/api/notifications").json())
@@ -137,6 +170,10 @@ time.sleep(2)
 n1 = len(get("/api/notifications").json())
 res["E5_duplicates"] = {"events_resent": len(ids), "notifications_before": n0, "notifications_after": n1}
 print(res["E5_duplicates"])
+
+quiet()
+res["breaker_closed_before_E7"] = wait_breaker_closed()
+print("breaker closed before E7:", res["breaker_closed_before_E7"])
 
 # ------------------------------------------------------------ E7 business rejections must not open the circuit breaker
 print("E7 rejections vs circuit breaker")
@@ -168,3 +205,27 @@ print(res["E6_trace"])
 
 json.dump(res, open(OUT, "w"), indent=1)
 print("saved", OUT)
+
+# ------------------------------------------------------------ pass / fail, so CI can run this script
+e1, e2, e3, e4, e5, e6, e7 = (res[k] for k in ("E1_outbox", "E2_saga_outage", "E3_rejection", "E4_idempotency", "E5_duplicates", "E6_trace", "E7_rejections"))
+checks = {
+    "E1 loans accepted while the broker is down": all(c == 201 for c in e1["http_status"]),
+    "E1 events waited in the outbox": e1["outbox_pending_during_outage"] >= 5,
+    "E1 outbox drained after the broker returned": e1["seconds_until_outbox_empty_after_broker_restart"] is not None,
+    "E1 every notification was created": e1["notifications_created"] == 5,
+    "E2 loan accepted as pending": e2["http_status_during_outage"] == 202 and e2["loan_status_when_accepted"] == "PENDING",
+    "E2 saga finished after recovery": e2["seconds_until_issued_after_book_service_restart"] is not None,
+    "E2 stock reduced exactly once": e2["copies_before"] - e2["copies_after"] == 1,
+    "E3 second request rejected": e3["second_status"] == 409 and e3["loan_state"] == "FAILED",
+    "E3 no stock change by the rejection": e3["copies_after_second"] == e3["copies_after_first"],
+    "E4 same key changes stock once": e4["decrement"] == 1,
+    "E5 duplicates ignored": e5["notifications_before"] == e5["notifications_after"],
+    "E6 trace spans four services": {"api-gateway", "lending-service", "member-service", "book-service"} <= set(e6.get("services", [])),
+    "E7 rejections do not open the breaker": e7["rejected_statuses"] == [409] and e7["next_valid_request_status"] == 201,
+}
+failed = [k for k, ok in checks.items() if not ok]
+for k, ok in checks.items():
+    print(("PASS  " if ok else "FAIL  ") + k)
+if failed:
+    raise SystemExit(f"{len(failed)} check(s) failed")
+print(f"all {len(checks)} checks passed")

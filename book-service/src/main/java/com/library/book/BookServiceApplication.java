@@ -4,7 +4,15 @@ import jakarta.persistence.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -81,8 +89,22 @@ class StockOp {
 
 interface StockOpRepository extends JpaRepository<StockOp, String> {}
 
+/** Catalogue totals, computed in the database. */
+interface BookStats {
+    long getTitles();
+    long getTotalCopies();
+    long getAvailableCopies();
+}
+
 interface BookRepository extends JpaRepository<Book, Long> {
     List<Book> findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(String title, String author);
+
+    @Query("select b from Book b where lower(b.title) like lower(concat('%', :q, '%')) or lower(b.author) like lower(concat('%', :q, '%')) "
+        + "or lower(b.isbn) like lower(concat('%', :q, '%')) or lower(coalesce(b.category, '')) like lower(concat('%', :q, '%'))")
+    Page<Book> searchPage(@Param("q") String q, Pageable pageable);
+
+    @Query("select count(b) as titles, coalesce(sum(b.totalCopies), 0) as totalCopies, coalesce(sum(b.availableCopies), 0) as availableCopies from Book b")
+    BookStats stats();
 }
 
 @RestController
@@ -99,6 +121,31 @@ class BookController {
     @GetMapping("/search")
     List<Book> search(@RequestParam String q) {
         return repo.findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(q, q);
+    }
+
+    /** Server-side search and paging for the web UI, so the browser never downloads the whole catalogue. Size is capped at 100. */
+    @GetMapping("/page")
+    Map<String, Object> page(@RequestParam(defaultValue = "") String q, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "24") int size) {
+        int s = Math.max(1, Math.min(size, 100));
+        Page<Book> p = repo.searchPage(q.trim(), PageRequest.of(Math.max(0, page), s, Sort.by("id")));
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("items", p.getContent());
+        out.put("total", p.getTotalElements());
+        out.put("page", p.getNumber());
+        out.put("pages", Math.max(1, p.getTotalPages()));
+        out.put("size", s);
+        return out;
+    }
+
+    /** Totals for the dashboard: titles, copies and copies on the shelf. */
+    @GetMapping("/stats")
+    Map<String, Object> stats() {
+        BookStats st = repo.stats();
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("titles", st.getTitles());
+        out.put("totalCopies", st.getTotalCopies());
+        out.put("availableCopies", st.getAvailableCopies());
+        return out;
     }
 
     @GetMapping("/{id}")

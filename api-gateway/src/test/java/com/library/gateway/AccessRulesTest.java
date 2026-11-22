@@ -22,6 +22,8 @@ class AccessRulesTest {
     void memberCanBrowseBooksButNotChangeThem() {
         assertTrue(AccessRules.allowed("GET", "/api/books", "MEMBER", 1L));
         assertTrue(AccessRules.allowed("GET", "/api/books/search", "MEMBER", 1L));
+        assertTrue(AccessRules.allowed("GET", "/api/books/page", "MEMBER", 1L));
+        assertTrue(AccessRules.allowed("GET", "/api/books/stats", "MEMBER", 1L));
         assertFalse(AccessRules.allowed("POST", "/api/books", "MEMBER", 1L));
         assertFalse(AccessRules.allowed("DELETE", "/api/books/5", "MEMBER", 1L));
     }

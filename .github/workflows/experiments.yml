@@ -1,0 +1,41 @@
+name: Fault-injection experiments
+# Starts the whole system with Docker Compose and runs the seven saga/outbox/breaker/tracing experiments of report/experiments.py.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  experiments:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install requests
+      - name: Start the system
+        run: docker compose up -d --build
+      - name: Wait until the demo data is loaded
+        run: |
+          for i in $(seq 1 120); do
+            t=$(curl -s -m 5 -X POST localhost:8080/api/auth/login -H 'Content-Type: application/json' -d '{"username":"librarian","password":"librarian123"}' | python3 -c "import sys,json; print(json.load(sys.stdin).get('token',''))" 2>/dev/null || true)
+            if [ -n "$t" ]; then
+              n=$(curl -s -m 5 -H "Authorization: Bearer $t" localhost:8080/api/fines | grep -o '"loanId"' | wc -l)
+              [ "$n" -ge 2 ] && echo "ready after $((i*5)) s" && exit 0
+            fi
+            sleep 5
+          done
+          echo "system did not become ready"; docker compose ps; exit 1
+      - name: Run the experiments
+        run: python report/experiments.py
+      - name: Keep the measured results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: experiments-result
+          path: report/results/experiments.json
+          if-no-files-found: ignore
+      - name: Show logs when something failed
+        if: failure()
+        run: docker compose logs --tail=80

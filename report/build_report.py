@@ -26,7 +26,8 @@ import content_a, content_b, content_c, data  # noqa: E402
 TEMPLATE = os.environ.get("TEMPLATE_DOCX", r"C:/Users/Manasa Krishnakumar/OneDrive/Desktop/bangalore_climate_app_final/devops_project/Project_Report_Silent_Failures_Kubernetes_v3.docx")
 OUT = os.path.join(HERE, "Online_Library_Management_System_Report.docx")
 PAGES = json.load(open(sys.argv[1], encoding="utf-8")) if len(sys.argv) > 1 and os.path.exists(sys.argv[1]) else {}
-NAME1, NAME2, USN = "Manasa Krishnakumar", "[STUDENT NAME 2]", "[USN]"
+TEAM = [("Manasa Krishnakumar", "1RV23IS067"), ("Gauri G Singh", "1RV23IS051"), ("Akanksha Rani", "1RV23IS010")]
+GUIDE, GUIDE_ROLE = "Sushmitha N", "Assistant Professor"
 TITLE = content_a.TITLE
 FONT = "Times New Roman"
 YEAR = "2026-2027"
@@ -89,16 +90,16 @@ def R(text):
 # ---------- front matter ----------
 ABSTRACT = []
 lat, thr, exp, cyc = data.lat, data.thr, data.exp, data.cyc
-ep = [k for k in lat if k.startswith("GET /api") and "10,000" not in k]
+ep = [k for k in lat if k in data.lat0 and k.startswith("GET /api") and "10,000" not in k]
 E1, E2, E7 = exp["E1_outbox"], exp["E2_saga_outage"], exp["E7_rejections"]
 ABSTRACT.append(
     "A library is a simple and familiar domain, which makes it a good subject for studying the questions that matter when a system is built from independent services: where each service keeps its data, who may call what, what happens to a half-finished operation when a neighbour fails, and how a developer can follow one request across services. "
     f"This project builds the Online Library Management System as eight Java modules (a configuration server, a service registry, an API gateway and five business services for books, members, lending, fines and notifications), a web front end for librarians and members, one PostgreSQL database with its own login for each business service, a RabbitMQ message broker and a monitoring stack of Zipkin, Prometheus and Grafana, all started with one command. The catalogue holds {data.DS['n']:,} real books from the public Goodbooks-10k dataset.")
 ABSTRACT.append(
     "The design follows the SEED(S) process, domain-driven design and event storming. The gateway issues and verifies JSON Web Tokens and applies role rules for librarians and members. Issuing a book is a saga: the loan is saved as pending, a copy is reserved in the book service with an idempotency key, and the loan is marked issued together with an outbox row in one transaction; a failing step is compensated or retried by a recovery job, and the outbox relay delivers events to the fine and notification services at least once, which tolerate duplicates. "
-    f"Measured on one laptop, reads through the gateway take a median of {min(lat[k]['p50'] for k in ep):.1f} to {max(lat[k]['p50'] for k in ep):.1f} ms, throughput peaks at {max(r['rps'] for r in thr):.0f} requests per second, and a late return produces a fine and a notification within {statistics.mean(x['notification_visible_ms'] for x in cyc):.0f} ms on average. "
+    f"Measured on one laptop, reads through the gateway take a median of {min(lat[k]['p50'] for k in ep):.1f} to {max(lat[k]['p50'] for k in ep):.1f} ms, throughput peaks at {max(r['rps'] for r in thr):.0f} requests per second on an idle laptop ({max(r['rps'] for r in data.thr23):.0f} when other programs were busy), and a late return produces a fine and a notification within {statistics.mean(x['notification_visible_ms'] for x in cyc):.0f} ms on average. "
     f"Seven fault-injection experiments passed: with the broker stopped, {len(E1['http_status'])} of {len(E1['http_status'])} issue requests were accepted and every event was delivered {E1['seconds_until_outbox_empty_after_broker_restart']:.0f} s after it returned; with the book service stopped, a loan was accepted as pending in {E2['seconds_to_accept']:.1f} s and completed {E2['seconds_until_issued_after_book_service_restart']:.0f} s after the restart with the stock reduced exactly once; {E7['rejected_count']} business rejections did not open the circuit breaker. "
-    "Twenty-three unit tests pass, and fourteen defects found by testing, measurement and deployment are documented with their fixes. The same system was also deployed to a single-node Kubernetes cluster, where all 14 pods became ready.")
+    "Thirty-one unit tests pass, and seventeen defects found by testing, measurement and deployment are documented with their fixes. The same system was also deployed to a single-node Kubernetes cluster, where all pods became ready in the right order.")
 
 set_text(P(11), TITLE)
 P(11).alignment = WD_ALIGN_PARAGRAPH.CENTER
@@ -106,15 +107,21 @@ for r in P(11).runs:
     r.font.size = Pt(20)
     r.bold = True
 set_text(P(13), "MICROSERVICES ARCHITECTURE - PROJECT REPORT")
-set_text(P(16), f"{NAME1}\t{USN}")
-set_text(P(17), f"{NAME2}\t{USN}")
-set_text(P(23), "                                        [FACULTY NAME]")
-set_text(P(24), "[Designation]")
+set_text(P(16), f"{TEAM[0][0]}\t{TEAM[0][1]}")
+set_text(P(17), f"{TEAM[1][0]}\t{TEAM[1][1]}")
+third = copy.deepcopy(kids[17])
+kids[17].addnext(third)
+set_text(Paragraph(third, d._body), f"{TEAM[2][0]}\t{TEAM[2][1]}")
+kids[18].getparent().remove(kids[18])
+set_text(P(23), "                                        " + GUIDE)
+set_text(P(24), GUIDE_ROLE)
 t33 = P(33).text
 set_text(P(33), t33.replace("2025-2026", YEAR))
-set_text(P(46), (f"Certified that the project work titled \u201c{TITLE}\u201d is carried out by {NAME1} ({USN}) and {NAME2} ({USN}), who are bonafide student of R.V College of Engineering, Bangalore, in partial fulfillment for the award of degree of Bachelor of Engineering in Information Science and engineering of the Visvesvaraya Technological University, Belgaum during the year 2026-27. It is certified that all corrections/suggestions indicated for the internal Assessment have been incorporated in the report deposited in the departmental library. The project report has been approved as it satisfies the academic requirements in respect of project work as a part of the course \u201cMicroservices Architecture (IS373TA)\u201d prescribed by the institution for the said degree."))
-set_text(P(74), f"We, {NAME1} and {NAME2}, students of seventh semester B.E., Department of Information Science and Engineering, RV College of Engineering, Bengaluru, hereby declare that the project titled \u201c{TITLE}\u201d has been carried out by us and submitted in partial fulfilment for the award of degree of Bachelor of Engineering in Information Science and Engineering during the year {YEAR}.")
-ACK = ("We express our sincere gratitude to our faculty guide, [FACULTY NAME], Department of Information Science and Engineering, RV College of Engineering, for guidance, encouragement and valuable suggestions throughout this project. "
+TEAM_TEXT = ", ".join(f"{n} ({u})" for n, u in TEAM[:-1]) + f" and {TEAM[-1][0]} ({TEAM[-1][1]})"
+TEAM_NAMES = ", ".join(n for n, _ in TEAM[:-1]) + f" and {TEAM[-1][0]}"
+set_text(P(46), (f"Certified that the project work titled \u201c{TITLE}\u201d is carried out by {TEAM_TEXT}, who are bonafide students of R.V College of Engineering, Bangalore, in partial fulfillment for the award of degree of Bachelor of Engineering in Information Science and engineering of the Visvesvaraya Technological University, Belgaum during the year 2026-27. It is certified that all corrections/suggestions indicated for the internal Assessment have been incorporated in the report deposited in the departmental library. The project report has been approved as it satisfies the academic requirements in respect of project work as a part of the course \u201cMicroservices Architecture (IS373TA)\u201d prescribed by the institution for the said degree."))
+set_text(P(74), f"We, {TEAM_NAMES}, students of seventh semester B.E., Department of Information Science and Engineering, RV College of Engineering, Bengaluru, hereby declare that the project titled \u201c{TITLE}\u201d has been carried out by us and submitted in partial fulfilment for the award of degree of Bachelor of Engineering in Information Science and Engineering during the year {YEAR}.")
+ACK = (f"We express our sincere gratitude to our faculty guide, {GUIDE}, {GUIDE_ROLE}, Department of Information Science and Engineering, RV College of Engineering, for guidance, encouragement and valuable suggestions throughout this project. "
        "We thank the Head of the Department of Information Science and Engineering and the faculty of the department for the laboratory facilities and the environment that made this work possible, and the Principal of RV College of Engineering for the academic support. "
        "We thank the authors of the open-source software on which the project stands - Spring Boot, Spring Cloud, PostgreSQL, RabbitMQ, Docker, Zipkin, Prometheus and Grafana - and the author of the Goodbooks-10k dataset. "
        "Finally, we thank our families and friends for their patience and support.")
@@ -367,6 +374,13 @@ def references_and_appendices():
     table(["Service", "Method", "Path", "Operation id", "Internal"], rows, size=8)
     caption("Table B.1  Operations of the business services", "table")
 
+    import demo_steps
+    heading("h2", "APPENDIX C  DEMO SCRIPT", page_break=True)
+    para("The steps used to demonstrate the system in about ten minutes. Accounts: librarian / librarian123 (full access) and asha.rao@example.com / member123 (member). Addresses: application http://localhost:3000, Eureka :8761, Zipkin :9411, Grafana :3001, RabbitMQ :15672, Prometheus :9090.")
+    table(["#", "What to do", "What it shows"], [list(s) for s in demo_steps.STEPS], size=9)
+    caption("Table C.1  Demo script", "table")
+    bullets(demo_steps.TIPS)
+
 
 references_and_appendices()
 HEADINGS_ALL = HEADINGS
@@ -492,7 +506,7 @@ for rel in d.part.rels.values():
                 t.text = YEAR
 
 d.core_properties.title = TITLE
-d.core_properties.author = NAME1
+d.core_properties.author = TEAM[0][0]
 d.save(OUT)
 json.dump({"headings": HEADINGS, "captions": CAPTIONS, "numbers": NUM}, open(os.path.join(HERE, "index.json"), "w", encoding="utf-8"), indent=0)
 print("saved", OUT, len(HEADINGS), "headings", len(CAPTIONS), "captions")

@@ -1,5 +1,5 @@
 """Chapters 1 to 3. Items: ('h2'|'h3'|'h5', text), ('p', text), ('bullets', [..]), ('table', header, rows, caption), ('fig', file, caption, width_in)."""
-from data import COLD, DS, HW, OPS, TESTS, exp, f, lat, loc, startup, thr
+from data import COLD, DS, thr23, HW, OPS, TESTS, exp, f, lat, loc, startup, thr
 
 TITLE = "Online Library Management System using Microservices Architecture"
 n_services = 8
@@ -71,6 +71,9 @@ CH2 = [
     ("p", "Sigelman et al. [18] describe Dapper, the Google system that popularised distributed tracing: a request carries an identifier through all services, and each service records timed spans. Zipkin, used here, follows the same model. Metrics are collected by Prometheus and shown in Grafana; the three pillars (logs, metrics, traces) are tied together by putting the trace identifier into every log line."),
     ("h5", "2.1.7  Organisation and deployment"),
     ("p", "Conway [14] observed that systems mirror the communication structure of the organisation that builds them. Skelton and Pais [13] turn this into team topologies: stream-aligned teams that own a service end to end, supported by a platform team. The syllabus uses this as the basis of the operating model, discussed in Section 4.3. For deployment, Burns et al. [15] describe the lessons from Borg and Omega that led to Kubernetes, and the Docker and Kubernetes documentation define the objects used in the manifests."),
+    ("h5", "2.1.8  Recent research (2020 onwards)"),
+    ("p", "Work published since 2020 confirms and refines these ideas. On consistency, Aydin and Cebi [26] compare choreography and orchestration as ways to run a saga, including the difficulty of rolling back in databases that give no isolation, Megargel et al. [27] propose a framework for choosing between the two styles, and Daraghmi et al. [28] extend the saga with a caching layer to reach eventual consistency. This project follows [26] and [27] in using an orchestrated saga for the one operation that must finish or be undone (issuing a book) and event choreography for the reactions (fines and notifications). On boundaries, Vural and Koyuncu [32] study whether domain-driven design leads to well-sized microservices and Singjai et al. [33] study how practitioners relate microservice APIs to domain-driven design, which matches the path from domain to API specification used in the SEED(S) process here. Mazzara et al. [29] describe the migration of a mission-critical system to microservices, and Bogner et al. [31] report how industry assures the evolvability of microservices."),
+    ("p", "On faults, Zhou et al. [30] combine an industrial survey, a benchmark system and an empirical study of faults in microservice systems, which motivates the fault-injection experiments of Chapter 6. Stanley and Sebastian [34] present the circuit breaker as a resilience mechanism for cloud-native systems and Sivakumar et al. [35] propose adapting its open-state interval; the experiments of Section 6.3 had to take the half-open behaviour of the breaker into account. On observability, Li et al. [36] report an industrial survey of microservice tracing, Usman et al. [37] survey observability for container-based microservices and Soualhia and Wuhib [38] use traces for anomaly detection and root-cause analysis. Barabanov and Makrushin [39] survey authentication and authorisation patterns, which supports checking tokens at a gateway while keeping internal endpoints unreachable from outside."),
     ("h3", "2.2  Summary of the Reviewed Works"),
     ("table", ["#", "Work", "Topic", "Used in this project for"], [
         ["[1]", "Nadareishvili, Microservices: Up and Running (2020)", "Building microservices step by step", "Overall process, SEED(S) vocabulary"],
@@ -90,12 +93,26 @@ CH2 = [
         ["[17]", "Jones, Bradley and Sakimura, RFC 7519 (2015)", "JSON Web Token", "Login and role claims"],
         ["[18]", "Sigelman et al., Dapper (2010)", "Distributed tracing", "Zipkin traces"],
         ["[19]", "Zajac, Goodbooks-10k (2017)", "Book dataset", "Catalogue data"],
+        ["[26]", "Aydin and Cebi, choreography vs orchestration sagas (IEEE ICECET 2022)", "Saga styles and rollback", "Orchestrated saga with a compensating step"],
+        ["[27]", "Megargel et al., orchestration vs choreography decision framework (IEEE EDOC 2021)", "Choosing the interaction style", "Orchestration for issuing, events for reactions"],
+        ["[28]", "Daraghmi et al., enhancing the saga pattern (Applied Sciences 2022)", "Saga with caching", "Contrast: idempotency keys and outbox instead"],
+        ["[29]", "Mazzara et al., migration of a mission-critical system (IEEE TSC 2021)", "Migration experience", "Independent deployment, gradual decomposition"],
+        ["[30]", "Zhou et al., fault analysis and debugging (IEEE TSE 2021)", "Faults in microservice systems", "Fault-injection experiments, tracing"],
+        ["[31]", "Bogner et al., evolvability assurance (Empirical Software Eng. 2021)", "Maintainability in industry", "Small modules, tests per module"],
+        ["[32]", "Vural and Koyuncu, DDD and microservice modularity (IEEE Access 2021)", "Service boundaries", "Bounded contexts from event storming"],
+        ["[33]", "Singjai et al., microservice APIs and DDD (IEEE ICSA 2021)", "API design from the domain", "SEED(S) actions and queries as OpenAPI"],
+        ["[34]", "Stanley and Sebastian, circuit breaker for cloud native architecture (IEEE GCITC 2023)", "Failure isolation", "Resilience4j around remote calls"],
+        ["[35]", "Sivakumar et al., self-adaptive open-state interval (IEEE OCIT 2024)", "Circuit breaker tuning", "Half-open behaviour seen in experiments"],
+        ["[36]", "Li et al., industrial survey of microservice tracing (Empirical Software Eng. 2022)", "Tracing in practice", "Zipkin traces, trace ids in logs"],
+        ["[37]", "Usman et al., observability of container-based microservices (IEEE Access 2022)", "Metrics, logs, traces", "Prometheus, Grafana, Zipkin"],
+        ["[38]", "Soualhia and Wuhib, traces-based anomaly detection (IEEE IC2E 2022)", "Trace analysis", "Manual root-cause reading; automation is future work"],
+        ["[39]", "Barabanov and Makrushin, authentication and authorization patterns (Voprosy Kiberbezopasnosti 2020)", "Security patterns", "Token check at the gateway"],
     ], "Reviewed works and how each is used"),
     ("h3", "2.3  Research Gap and Positioning"),
     ("p", "The gap addressed is one of integration and evidence rather than of a new algorithm. Individual patterns are well documented, but tutorial-level examples frequently show them one at a time, with in-memory data, without login and without measurements. This project combines them in one running system and checks each claim by experiment."),
     ("table", ["Point that is often left open", "What this project does", "Evidence"], [
         ["Data of each service lives in memory or in one shared database", "One PostgreSQL database and one login per service", "Section 6.1: permission denied across databases"],
-        ["Anyone can call every API", "JWT login and role rules at the gateway, internal endpoints blocked", "9 unit tests and live checks (401, 403, 200)"],
+        ["Anyone can call every API", "JWT login and role rules at the gateway, internal endpoints blocked", "14 unit tests and live checks (401, 403, 200)"],
         ["Two writes in two services assumed to succeed together", "Saga with compensation, outbox, idempotency keys", "Experiments E1 to E7"],
         ["Circuit breaker enabled with default settings", "Breaker records only server errors and timeouts; timeouts shortened", "Defects D5 and D6, {fig:outage}"],
         ["Monitoring added at the end or not at all", "Traces, metrics and a provisioned dashboard from the start", "{fig:trace} to {fig:grafana}"],
@@ -111,9 +128,9 @@ CH3 = [
     ("p", "This chapter states what the system must do (functional requirements), how well it must do it (non-functional requirements) and what is needed to build and run it."),
     ("h3", "3.1  Functional Requirements"),
     ("table", ["ID", "Requirement", "Verified by"], [
-        ["FR1", "A user signs in with a username and password and receives a token that is valid for 60 minutes.", "JwtServiceTest; live login ({fig:login})"],
+        ["FR1", "A user signs in with a username and password and receives a token that is valid for 60 minutes; an active session refreshes the token, and the user can change the password.", "JwtServiceTest, AuthControllerTest; live login ({fig:login})"],
         ["FR2", "A librarian adds, edits and deletes books.", "Live check, Section 6.1"],
-        ["FR3", "Any signed-in user searches the catalogue by title, author, category or ISBN.", "Live search, Section 6.1"],
+        ["FR3", "Any signed-in user searches the catalogue by title, author, category or ISBN; search and paging run on the server.", "BookControllerTest; live search, Section 6.1"],
         ["FR4", "A librarian registers, edits, suspends and deletes members.", "Live check"],
         ["FR5", "A librarian issues a book to an active member; the due date is the issue date plus the loan period (14 days, set in the config server).", "LendingServiceTest"],
         ["FR6", "The system refuses to issue a book that has no free copy or to a suspended member.", "Experiment E3; LendingServiceTest"],
@@ -130,14 +147,14 @@ CH3 = [
     ("p", "The targets below were fixed as design goals for a single-laptop deployment. The measured values are given in Chapter 6."),
     ("table", ["Quality", "Requirement (design goal)", "Measured"], [
         ["Performance", "95th-percentile latency of a single-record read through the gateway below 100 ms", f"p95 {f(lat['GET /api/books/1']['p95'])} ms ({{tab:lat}})"],
-        ["Throughput", "At least 300 requests per second for a simple read on one laptop", f"peak {f(max(r['rps'] for r in thr), 0)} requests per second ({{tab:thr}})"],
+        ["Throughput", "At least 300 requests per second for a simple read on one laptop", f"peak {f(max(r['rps'] for r in thr), 0)} requests per second on an idle machine, {f(max(r['rps'] for r in thr23), 0)} on a busy one ({{tab:thr}}, {{tab:rerun}})"],
         ["Consistency", "A loan is never ISSUED without a reserved copy, and a reserved copy is never leaked", "Experiments E2, E3, E4"],
         ["Availability", "Issuing keeps working, or is accepted for later completion, when one dependency is down", "Experiments E1, E2"],
         ["Security", "No access without a valid token; members cannot read other members' data; stock endpoints not callable from outside", "Section 6.1"],
         ["Isolation", "A service cannot read another service's database", "Section 6.1"],
         ["Observability", "A request across services appears as one trace; every service exposes metrics", "{fig:trace} to {fig:grafana}"],
         ["Start-up", "Whole system, including data, ready within two minutes of docker compose up", f"slowest service {f(max(startup.values()))} s; data ready {f(COLD['fines_2_s'], 0)} s after the command"],
-        ["Maintainability", "Each service is a separate module with its own tests and build", f"{n_services} Java modules, 23 unit tests"],
+        ["Maintainability", "Each service is a separate module with its own tests and build", f"{n_services} Java modules, 31 unit tests"],
         ["Portability", "Runs from a single command on any machine with Docker", "docker compose up --build"],
     ], "Non-functional requirements and the measured result"),
     ("h3", "3.3  Hardware Requirements"),

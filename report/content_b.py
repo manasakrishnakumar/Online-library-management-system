@@ -1,7 +1,7 @@
 """Chapters 4 and 5."""
 from collections import Counter
 
-from data import DS, OPS, TESTS, f, loc, out_after, out_before, startup
+from data import DS, K8S, OPS, TESTS, f, loc, out_after, out_before, startup
 
 per_svc = Counter(o[0] for o in OPS)
 slow_before = [x for x in out_before["during_outage"] if x["ms"] > 1000]
@@ -95,7 +95,7 @@ CH4 = [
     ("p", "{fig:saga} shows the issue saga. The loan is saved as PENDING first, so that there is always a record of the intention. The reservation at the book service carries the idempotency key loan-<id>-borrow. If the book service refuses (no copies, unknown book) the loan becomes FAILED and nothing has to be undone. If the answer is unknown (timeout or outage) the loan stays PENDING and the caller receives status 202; a recovery job replays the same step every five seconds with the same key, so a reservation that actually succeeded earlier is not applied twice. When the reservation has succeeded, the loan is marked ISSUED and the outbox row is written in one database transaction. If that transaction fails, the reserved copy is released by a compensating call. The relay reads unsent outbox rows every 300 milliseconds and publishes them with the row identifier as message identifier; the notification service ignores a message identifier it has already stored."),
     ("fig", "assets/diag_saga.png", "Issue saga with its failure paths", 5.4, "saga"),
     ("h5", "4.4.4  Security design"),
-    ("p", "Users are defined in the gateway configuration (one librarian and three demonstration members). Passwords are hashed with BCrypt when the gateway starts and only hashes are compared. The login returns a token with a 60-minute lifetime. {tab:roles} shows what each role may do. The two stock endpoints of the book service are blocked for everybody at the gateway, because only the lending saga may change stock, and the saga calls the book service directly through the registry, not through the gateway."),
+    ("p", "Users are defined in the gateway configuration (one librarian and three demonstration members). Passwords are hashed with BCrypt when the gateway starts and only hashes are compared. The login returns a token with a 60-minute lifetime; the web interface refreshes it automatically when less than ten minutes remain, and a user can change the password (the new hash is kept in memory, so it lasts until the gateway restarts). {tab:roles} shows what each role may do. The two stock endpoints of the book service are blocked for everybody at the gateway, because only the lending saga may change stock, and the saga calls the book service directly through the registry, not through the gateway."),
     ("table", ["Operation", "Librarian", "Member", "Not signed in"], [
         ["Sign in", "yes", "yes", "yes"],
         ["Browse and search books", "yes", "yes", "no"],
@@ -116,10 +116,11 @@ CH4 = [
     ("fig", "assets/diag_deploy.png", "Containers started by Docker Compose", 5.4, "deploy"),
     ("table", ["Kubernetes object", "Count", "Purpose"], [
         ["Namespace", "1", "library"],
-        ["Deployment and Service", "12 each", "Eight Java modules, frontend, PostgreSQL, RabbitMQ, Zipkin; book and member services run two replicas"],
-        ["ConfigMap", "1", "Database creation script for PostgreSQL"],
+        ["Deployment and Service", "14 each", "Eight Java modules, frontend, PostgreSQL, RabbitMQ, Zipkin, Prometheus, Grafana; book and member services run two replicas"],
+        ["ConfigMap", "5", "Database script, Prometheus configuration, Grafana data sources, dashboard provider and dashboard"],
+        ["Init containers", "7", "Every Java service except the config server waits for the services it needs, so the pods start in order"],
         ["Secret", "1", "JWT signing secret for the gateway"],
-        ["NodePort", "1", "Front end on port 30080"],
+        ["NodePort", "2", "Front end on port 30080, Grafana on port 30081"],
     ], "Kubernetes objects in k8s/library.yaml", "k8s"),
     ("h3", "4.5  Tools and APIs"),
     ("p", "The tools below are described in their reference documentation [20] to [25]. The first table lists what each tool is used for; the second lists the routes of the gateway."),
@@ -163,7 +164,7 @@ CH5 = [
         ["frontend", "3000", "Single-page web application", "HTML, JavaScript, CSS, nginx"],
     ], "Modules of the implementation"),
     ("h3", "5.2  Implementation Tool Features"),
-    ("p", "Spring Boot auto-configuration keeps each service to one source file plus configuration. The front end is plain HTML, JavaScript and CSS without a build step; it escapes all text before inserting it into the page and keeps the token in the session storage of the browser, so closing the tab signs the user out. The interface uses generated book covers, a dashboard with a stock ring, a grid and a table view of the catalogue and a split-screen login; reviewing it in the browser at several window widths found two layout defects and one state defect (D13 and D14). The Docker build uses a cache mount for the Maven repository and a mirror of Maven Central (maven-settings.xml), which avoided rate limiting by the main repository during this work."),
+    ("p", "Spring Boot auto-configuration keeps each service to one source file plus configuration. The front end is plain HTML, JavaScript and CSS without a build step; it escapes all text before inserting it into the page and keeps the token in the session storage of the browser, so closing the tab signs the user out. The interface uses generated book covers, a dashboard with a stock ring, a grid and a table view of the catalogue and a split-screen login; reviewing it in the browser at several window widths found two layout defects and one state defect (D13 and D14). The catalogue is searched and paged on the server (D15). The Docker build uses a cache mount for the Maven repository and a mirror of Maven Central (maven-settings.xml), which avoided rate limiting by the main repository during this work."),
     ("h3", "5.3  Code Snippets with Explanation"),
     ("h5", "5.3.1  The saga step (LendingService.advance)"),
     ("code", "lending-service/src/main/java/com/library/lending/LendingServiceApplication.java", "    Loan advance(Long loanId) {", 34, "LendingService.advance: saga steps 2 and 3 with compensation"),
@@ -171,9 +172,11 @@ CH5 = [
     ("h5", "5.3.2  Remote calls with circuit breaker (RemoteGateway)"),
     ("code", "lending-service/src/main/java/com/library/lending/LendingServiceApplication.java", '    @CircuitBreaker(name = "memberService"', 14, "Remote calls wrapped by circuit breakers with fallbacks"),
     ("p", "Each remote call has a named breaker and a fallback that converts the failure into a ResponseStatusException: the original status for a 4xx answer, and 503 for everything else. Which exceptions count as failures is set in application.yml (server errors, connection errors and timeouts only); the Feign connect and read timeouts are 2 and 3 seconds."),
-    ("h5", "5.3.3  Idempotent stock operation (BookController)"),
+    ("h5", "5.3.3  Idempotent stock operation and server-side paging (BookController)"),
     ("code", "book-service/src/main/java/com/library/book/BookServiceApplication.java", "    /** Called by the lending saga when a book is issued.", 10, "Borrow with an idempotency key"),
     ("p", "The method is transactional. If the key has been stored before, the call returns the book unchanged; otherwise it decrements the copy count and stores the key in the same transaction. A retry by the recovery job can therefore never reserve a second copy."),
+    ("code", "book-service/src/main/java/com/library/book/BookServiceApplication.java", "    /** Server-side search and paging", 14, "Server-side search and paging of the catalogue"),
+    ("p", "The web interface asks for one page at a time. The page size is capped at 100 and the search runs in the database (a case-insensitive match on title, author, ISBN and category), so the cost of a request does not depend on the size of the catalogue. A second endpoint returns the totals for the dashboard."),
     ("h5", "5.3.4  Outbox relay"),
     ("code", "lending-service/src/main/java/com/library/lending/LendingServiceApplication.java", "    @Scheduled(fixedDelay = 300)", 16, "OutboxRelay.relay"),
     ("p", "The relay sends unsent rows in creation order and marks each one as sent after the broker call returned. If the broker is unreachable the loop stops and tries again 300 milliseconds later, so events wait in the table, which is exactly what experiment E1 shows. The row identifier is the message identifier, which lets receivers recognise duplicates."),
@@ -197,9 +200,9 @@ CH5 = [
     ("h3", "5.4  Testing"),
     ("h5", "5.4.1  Test levels"),
     ("table", ["Level", "What it checks", "How", "Result"], [
-        ["Unit tests", "Business rules, token handling, role rules, saga paths", "JUnit 5 and Mockito, mvn test", "23 of 23 passed"],
+        ["Unit tests", "Business rules, token handling, role rules, saga paths", f"JUnit 5 and Mockito, mvn test", f"{len(TESTS)} of {len(TESTS)} passed"],
         ["Live functional check", "All pages and flows for both roles, security and database isolation", "Browser and curl against the running stack, 4 to 5 November 2026", "All as expected after the fixes in Section 5.4.4"],
-        ["Fault injection", "Broker outage, service outage, rejection, retries, duplicates, tracing, breaker behaviour", "Script report/experiments.py", "7 of 7 passed (Section 6.3)"],
+        ["Fault injection", "Broker outage, service outage, rejection, retries, duplicates, tracing, breaker behaviour", "Script report/experiments.py, also run by GitHub Actions", "13 of 13 checks passed (Section 6.3)"],
         ["Performance", "Latency, throughput, event delay, outage behaviour, start-up, memory", "Script report/measure.py", "Section 6.2"],
         ["Kubernetes deployment", "All 14 pods ready; login, catalogue, demonstration data, security rule and a new loan on minikube", "kubectl and curl against the cluster, 12 November 2026", "Section 6.5"],
     ], "Test levels"),
@@ -224,7 +227,10 @@ CH5 = [
         ["D12", "Kubernetes deployment", "After a restart, minikube had only about 5.4 GB of memory and the old Compose containers restarted by themselves; fourteen Java pods and a second stack competed, the API server timed out and no pod was ready after 51 minutes.", "Compose stack stopped, cluster recreated with 9,000 MB, heap of every JVM capped by JAVA_TOOL_OPTIONS in the manifests; all 14 pods ready in about five minutes."],
         ["D13", "Live check of the redesign", "On windows narrower than about 1,000 pixels the two-column panels of the dashboard made the page wider than the window; at 1,150 pixels the action buttons of the Lending table were hidden behind a scrollbar.", "Panels may shrink (min-width 0, minmax(min(100%, 340px), 1fr)); spacing tightened and the Issued column dropped from the Lending table; no horizontal overflow measured at 900 pixels."],
         ["D14", "Live check of the redesign", "The loan-history popup stayed open after signing out and signing in as another user.", "The popup is closed on sign-out and on sign-in; checked with the member screenshots."],
+        ["D15", "Design review", "The web interface downloaded the whole catalogue (about 1.6 MB) on every visit to filter it in the browser, and the dashboard did the same to add up copies.", "Server-side search and paging (GET /api/books/page, size capped at 100) and a totals endpoint (GET /api/books/stats); three more unit tests; the dashboard and the issue dialog no longer download the catalogue."],
+        ["D16", "Automated experiments", "Run on a fresh system, experiments E3, E5 and E7 failed intermittently: just after the book service was restarted the breaker was still half-open and answered some requests 202 instead of 409, and a late notification changed a count.", "Every experiment now starts from a settled system (no pending loan, empty outbox, breaker closed); the script exits with an error when one of its 13 checks fails, so GitHub Actions can run it."],
+        ["D17", "Kubernetes deployment (retest)", "With no start-order control, seven of the fourteen pods restarted once or twice while starting.", f"Init containers wait for the config server, the registry, PostgreSQL and RabbitMQ; after the change the pods restarted {K8S['total_restarts']} times in total (Section 6.5)."],
     ], "Defects found and fixed"),
     ("h3", "5.5  Summary"),
-    ("p", "The implementation follows the design module by module. Twenty-three unit tests pass, the live checks cover both roles, and fourteen defects, two of them found by measurement, two by design review and one while deploying to Kubernetes, and three more by reviewing the redesigned interface, were fixed and re-verified. The next chapter reports what the finished system does."),
+    ("p", "The implementation follows the design module by module. Thirty-one unit tests pass, the live checks cover both roles, and seventeen defects (eight found by live checks, three by design review, two by measurement, two while deploying to Kubernetes, one by the automated experiments and one by the Docker build) were fixed and re-verified. The next chapter reports what the finished system does."),
 ]

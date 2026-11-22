@@ -9,14 +9,14 @@
    201
   ],
   "outbox_pending_during_outage": 5,
-  "seconds_until_outbox_empty_after_broker_restart": 18.2814302444458,
+  "seconds_until_outbox_empty_after_broker_restart": 31.650810718536377,
   "notifications_created": 5
  },
  "E2_saga_outage": {
   "http_status_during_outage": 202,
   "loan_status_when_accepted": "PENDING",
-  "seconds_to_accept": 2.069209575653076,
-  "seconds_until_issued_after_book_service_restart": 13.374378681182861,
+  "seconds_to_accept": 2.0992043018341064,
+  "seconds_until_issued_after_book_service_restart": 28.980641841888428,
   "copies_before": 1,
   "copies_after": 0,
   "events": [
@@ -24,6 +24,7 @@
    "BOOK_ISSUED"
   ]
  },
+ "breaker_closed_before_E3": true,
  "E3_rejection": {
   "first_status": 201,
   "copies_after_first": 0,
@@ -45,9 +46,10 @@
  },
  "E5_duplicates": {
   "events_resent": 3,
-  "notifications_before": 22,
-  "notifications_after": 22
+  "notifications_before": 23,
+  "notifications_after": 23
  },
+ "breaker_closed_before_E7": true,
  "E7_rejections": {
   "first_status": 201,
   "rejected_statuses": [
@@ -57,7 +59,7 @@
   "next_valid_request_status": 201
  },
  "E6_trace": {
-  "trace_id": "6aeb8a032d4a3493cb8f4e85eecb9412",
+  "trace_id": "6b03389ed7c48eecfa33c307cac1ea6d",
   "spans": 7,
   "services": [
    "api-gateway",
@@ -65,6 +67,6 @@
    "lending-service",
    "member-service"
   ],
-  "duration_ms": 48.094
+  "duration_ms": 70.92
  }
 }
