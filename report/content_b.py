@@ -49,7 +49,7 @@ CH4 = [
     ("p", "The member data (15 members) and the 8 demonstration loans are small enough to be written by hand. The members are loaded from members.csv; the loans are created by the lending service itself, by calling the real issue and return operations, so the demonstration data passes through the same saga and events as real data. Two of the loans are returned late, which makes the fine service and the notification service produce the fines of 32 and 8 rupees seen in Chapter 6."),
     ("h3", "4.3  Design and Methodology"),
     ("h5", "4.3.1  Operating model and team topology"),
-    ("p", "Following Skelton and Pais [13], the system is divided between three stream-aligned teams and one platform team. Each stream-aligned team owns its services from design to operation."),
+    ("p", "Following the team-topology approach of the syllabus (see also [13] and [14]), the system is divided between three stream-aligned teams and one platform team. Each stream-aligned team owns its services from design to operation."),
     ("table", ["Team", "Type", "Owns"], [
         ["Catalogue team", "Stream-aligned", "book-service"],
         ["Membership team", "Stream-aligned", "member-service"],
@@ -123,9 +123,9 @@ CH4 = [
         ["NodePort", "2", "Front end on port 30080, Grafana on port 30081"],
     ], "Kubernetes objects in k8s/library.yaml", "k8s"),
     ("h3", "4.5  Tools and APIs"),
-    ("p", "The tools below are described in their reference documentation [20] to [25]. The first table lists what each tool is used for; the second lists the routes of the gateway."),
+    ("p", "The tools are described in [20] to [25] (Spring [4][20], circuit breaker [21], RabbitMQ [22], OpenAPI [23], Docker [24], Prometheus and Grafana [25]). The first table lists what each tool is used for; the second lists the routes of the gateway."),
     ("table", ["Tool", "Purpose in the project", "Why chosen"], [
-        ["Spring Boot", "Framework of every service", "Prescribed reference [4]; fast to start with"],
+        ["Spring Boot", "Framework of every service", "Described in [4] and [20]; fast to start with"],
         ["Spring Cloud Gateway", "Routing and the token check", "Reactive, filters are plain Java"],
         ["Eureka", "Service registry", "Works with Spring Cloud load balancing and Feign"],
         ["Spring Cloud Config", "Shared settings", "Change loan period without redeploying"],

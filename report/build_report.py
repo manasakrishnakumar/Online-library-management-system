@@ -26,7 +26,7 @@ import content_a, content_b, content_c, data  # noqa: E402
 TEMPLATE = os.environ.get("TEMPLATE_DOCX", r"C:/Users/Manasa Krishnakumar/OneDrive/Desktop/bangalore_climate_app_final/devops_project/Project_Report_Silent_Failures_Kubernetes_v3.docx")
 OUT = os.path.join(HERE, "Online_Library_Management_System_Report.docx")
 PAGES = json.load(open(sys.argv[1], encoding="utf-8")) if len(sys.argv) > 1 and os.path.exists(sys.argv[1]) else {}
-TEAM = [("Manasa Krishnakumar", "1RV23IS067"), ("Gauri G Singh", "1RV23IS051"), ("Akanksha Rani", "1RV23IS010")]
+TEAM = [("Akanksha Rani", "1RV23IS010"), ("Gauri G Singh", "1RV23IS051"), ("Manasa Krishnakumar", "1RV23IS067")]
 GUIDE, GUIDE_ROLE = "Sushmitha N", "Assistant Professor"
 TITLE = content_a.TITLE
 FONT = "Times New Roman"

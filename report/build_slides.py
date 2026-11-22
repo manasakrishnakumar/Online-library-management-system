@@ -25,7 +25,7 @@ OUT = os.path.join(HERE, "Online_Library_Management_System_Presentation.pptx")
 BLUE = RGBColor(0x00, 0x00, 0xFF)
 FONT = "Times New Roman"
 TITLE = "ONLINE LIBRARY MANAGEMENT SYSTEM USING MICROSERVICES ARCHITECTURE"
-TEAM = ["Manasa Krishnakumar - 1RV23IS067", "Gauri G Singh - 1RV23IS051", "Akanksha Rani - 1RV23IS010"]
+TEAM = ["Akanksha Rani - 1RV23IS010", "Gauri G Singh - 1RV23IS051", "Manasa Krishnakumar - 1RV23IS067"]
 GUIDE = "GUIDE: Sushmitha N, Assistant Professor, Dept. of ISE, RV College of Engineering"
 
 prs = Presentation(TEMPLATE)
@@ -110,6 +110,9 @@ def table(slide, header, rows, left, top, width, col_w, size=10, row_h=0.4):
     total = sum(col_w)
     for i, w in enumerate(col_w):
         tbl.columns[i].width = int(width * w / total)
+    tbl.rows[0].height = Inches(0.5)
+    for k in range(1, len(rows) + 1):
+        tbl.rows[k].height = Inches(row_h)
     for j, h in enumerate(header):
         c = tbl.cell(0, j)
         c.text = ""
@@ -159,7 +162,7 @@ blank = copy.deepcopy(pars[3]._p)
 pars[7]._p.addnext(blank)
 guide = copy.deepcopy(pars[7]._p)
 blank.addnext(guide)
-set_par(tb.text_frame.paragraphs[9], GUIDE, 16)
+set_par(tb.text_frame.paragraphs[9], GUIDE, 22)
 for par in tb.text_frame.paragraphs:
     for r in par.runs:
         r.font.size = Pt(18 if par.runs and par.runs[0].text.startswith(("TITLE", "MICRO")) else r.font.size.pt if r.font.size else 18)
@@ -172,46 +175,40 @@ bullets(s, [
     "**Microservices** split the system into small services that are built, deployed and scaled **independently**, each owning its own data.",
     "The price: services must be **found**, calls must be **secured**, a failing neighbour must not leave **half-finished operations**, and a request must be **traceable**.",
     f"This project builds the **Online Library Management System (OLMS)**: 8 Java modules, a web UI, PostgreSQL (one database per service), RabbitMQ events, Zipkin, Prometheus and Grafana, with **{data.DS['n']:,} real books** (Goodbooks-10k).",
-    "Course: **IS373TA Microservices Architecture** (SEED(S), bounded contexts, event sourcing, Docker, Kubernetes).",
-], Inches(0.7), Inches(1.0), Inches(12), Inches(5.9), size=19, gap=10)
+    "**Users:** a **member** browses books and follows own loans; a **librarian** issues and returns books and manages the catalogue and fines.",
+    "**Motivation:** one failing part, such as the broker or the book service, should not stop the whole library or corrupt a loan.",
+], Inches(0.7), Inches(1.0), Inches(12), Inches(5.9), size=23, gap=12)
 
-# ---------------------------------------------------------------- 3-5 literature survey (all after 2020, verified in Crossref)
+
+# ---------------------------------------------------------------- 3-4 literature survey (2 slides, IEEE or Springer, 2020 onwards, checked in Crossref)
 LIT = [
     ("S. Aydin and C. Cebi, \"Comparison of Choreography vs Orchestration Based Saga Patterns in Microservices,\" IEEE ICECET, 2022",
      "Compares how choreography and orchestration implement a saga; discusses rollback problems with isolated NoSQL databases", "Saga styles for distributed transactions", "Orchestrated saga in lending-service with a compensating step"),
     ("A. Megargel, C. Poskitt and V. Shankararaman, \"Microservices Orchestration vs. Choreography: A Decision Framework,\" IEEE EDOC, 2021",
-     "Proposes a decision framework for choosing between orchestration and choreography", "Choice of interaction style", "Orchestration for issue-book, events (choreography) for fines and notifications"),
-    ("E. Daraghmi, C.-P. Zhang and S.-M. Yuan, \"Enhancing Saga Pattern for Distributed Transactions within a Microservices Architecture,\" Applied Sciences (MDPI), 2022",
-     "Adds an in-memory caching layer to the saga to reach eventual consistency; compared with a standard saga on a small e-commerce system", "Saga optimisation", "Our design uses idempotency keys and an outbox instead of a cache"),
-    ("M. Mazzara et al., \"Microservices: Migration of a Mission Critical System,\" IEEE Trans. Services Computing, 2021",
-     "Reports the migration of a legacy mission-critical system to microservices and the lessons learned", "Migration experience", "Independent deployment and gradual decomposition"),
+     "Proposes a decision framework for choosing between orchestration and choreography", "Choice of interaction style", "Orchestration for issue-book, events for fines and notifications"),
     ("X. Zhou et al., \"Fault Analysis and Debugging of Microservice Systems: Industrial Survey, Benchmark System, and Empirical Study,\" IEEE Trans. Software Eng., 2021",
-     "Industrial survey of fault analysis and debugging, a benchmark microservice system and an empirical study of faults", "Faults in microservice systems", "Motivated fault-injection experiments and tracing"),
-    ("J. Bogner, J. Fritzsch, S. Wagner and A. Zimmermann, \"Industry practices and challenges for the evolvability assurance of microservices,\" Empirical Software Eng. (Springer), 2021",
-     "Interview study and grey-literature review of how industry assures the evolvability of microservices", "Maintainability of services", "Small modules, own databases, tests per module"),
+     "Industrial survey of fault analysis and debugging, a benchmark system and an empirical study of faults", "Faults in microservice systems", "Motivated the fault-injection experiments and tracing"),
     ("H. Vural and M. Koyuncu, \"Does Domain-Driven Design Lead to Finding the Optimal Modularity of a Microservice?\" IEEE Access, 2021",
      "Investigates whether domain-driven design leads to optimal microservice modularity", "Service boundaries", "Bounded contexts found by event storming"),
-    ("A. Singjai, U. Zdun and O. Zimmermann, \"Practitioner Views on the Interrelation of Microservice APIs and Domain-Driven Design: A Grey Literature Study Based on Grounded Theory,\" IEEE ICSA, 2021",
+    ("A. Singjai, U. Zdun and O. Zimmermann, \"Practitioner Views on the Interrelation of Microservice APIs and Domain-Driven Design,\" IEEE ICSA, 2021",
      "Grey-literature study of how practitioners relate microservice APIs to domain-driven design", "API design from the domain model", "SEED(S) actions and queries published as OpenAPI"),
     ("N. Stanley S A and S. Sebastian, \"Circuit Breaker: A Resilience Mechanism for Cloud Native Architecture,\" IEEE GCITC, 2023",
      "Presents the circuit breaker as a resilience mechanism for cloud-native architectures", "Failure isolation", "Resilience4j breaker around every remote call"),
     ("K. Sivakumar, J. Sebastian and P. S. Thilagam, \"Self-Adaptive Circuit Breaker Open-State Interval for Enhancing Resiliency of Microservices,\" IEEE OCIT, 2024",
-     "Proposes adapting the open-state interval of a circuit breaker to improve resiliency", "Circuit breaker tuning", "We saw half-open behaviour in experiment E7; adaptive interval is future work"),
+     "Proposes adapting the open-state interval of a circuit breaker to improve resiliency", "Circuit breaker tuning", "Half-open behaviour seen in experiment E7; adaptive interval is future work"),
     ("B. Li et al., \"Enjoy your observability: an industrial survey of microservice tracing and analysis,\" Empirical Software Eng. (Springer), 2022",
-     "Survey based on interviews with developers and operation engineers of microservice systems from ten companies", "Tracing in practice", "Zipkin traces, trace ids in every log line"),
+     "Interviews with developers and operation engineers of microservice systems from ten companies", "Tracing in practice", "Zipkin traces, trace id in every log line"),
     ("M. Usman, S. Ferlin, A. Brunstrom and J. Taheri, \"A Survey on Observability of Distributed Edge & Container-Based Microservices,\" IEEE Access, 2022",
      "Surveys observability (metrics, logs, traces) for edge and container-based microservices", "Observability techniques", "Prometheus, Grafana and Zipkin from the start"),
-    ("M. Soualhia and F. Wuhib, \"Automated Traces-based Anomaly Detection and Root Cause Analysis in Cloud Platforms,\" IEEE IC2E, 2022",
-     "Uses traces to detect anomalies and locate root causes in cloud platforms", "Trace analysis", "Our traces allow manual root-cause reading; automatic detection is future work"),
-    ("A. Barabanov and D. Makrushin, \"Authentication and Authorization in Microservice-Based Systems: Survey of Architecture Patterns,\" Voprosy Kiberbezopasnosti, 2020",
-     "Surveys authentication and authorization architecture patterns, drawing on research papers and security conference talks", "Security patterns", "JWT checked at the gateway, internal endpoints blocked"),
+    ("J. Bogner, J. Fritzsch, S. Wagner and A. Zimmermann, \"Industry practices and challenges for the evolvability assurance of microservices,\" Empirical Software Eng. (Springer), 2021",
+     "Interview study and grey-literature review of how industry assures the evolvability of microservices", "Maintainability of services", "Small modules, own databases, tests per module"),
 ]
 HEAD = ["Title, Author and Year of Publication", "Key Findings", "Scope of the Work", "Use in This Project"]
-for part, chunk in enumerate((LIT[:5], LIT[5:10], LIT[10:]), 1):
-    s = new_slide(); title(s, f"LITERATURE SURVEY ({part}/3)", 30)
-    table(s, HEAD, chunk, Inches(0.55), Inches(0.95), SW - Inches(1.1), [3.6, 3.6, 2.0, 3.0], size=10, row_h=0.9)
+for part, chunk in enumerate((LIT[:5], LIT[5:]), 1):
+    s = new_slide(); title(s, f"LITERATURE SURVEY ({part}/2)", 30)
+    table(s, HEAD, chunk, Inches(0.45), Inches(0.95), SW - Inches(0.9), [3.7, 3.6, 2.0, 3.1], size=12, row_h=1.0)
 
-# ---------------------------------------------------------------- 6 problem statement and objectives
+# ---------------------------------------------------------------- 5 problem statement and objectives
 s = new_slide(); title(s, "PROBLEM STATEMENT & OBJECTIVES", 30)
 bullets(s, [
     "**Problem statement:** Design and implement a library management system as microservices with their own databases, so that a librarian can issue and take back books and members can follow their own loans, while multi-service operations stay **consistent** when a service or the broker fails, access is **controlled by role**, and every request can be **traced and measured**.",
@@ -222,46 +219,51 @@ bullets(s, [
     "  Keep data consistent without a distributed transaction: **saga, outbox, idempotency keys**",
     "  Make the system observable: traces, metrics, dashboards",
     "  Containerise (Docker Compose, Kubernetes), test, measure and report honestly",
-], Inches(0.7), Inches(0.95), Inches(12), Inches(6), size=18, gap=7)
+], Inches(0.6), Inches(0.95), Inches(12.2), Inches(6.3), size=24, gap=10)
 
-# ---------------------------------------------------------------- 7 methodology: architecture
+# ---------------------------------------------------------------- 6 methodology: architecture
 s = new_slide(); title(s, "METHODOLOGY")
-picture(s, path("assets", "diag_architecture.png"), Inches(0.5), Inches(0.95), height=Inches(6.2), caption="Architecture of the Online Library Management System")
+picture(s, path("assets", "diag_architecture.png"), Inches(0.4), Inches(0.95), height=Inches(6.2), caption="Architecture of the Online Library Management System", cap_size=12)
 bullets(s, [
-    "**Browser \u2192 nginx \u2192 API Gateway**: JWT login, role rules, routing",
+    "**Browser → nginx → API Gateway**: JWT login, role rules, routing",
     "**Eureka** finds services by name; **Config Server** shares settings",
     "**Book, Member, Lending, Fine, Notification**: one PostgreSQL database and login each",
     "**REST + circuit breaker** for questions that need an answer now",
     "**RabbitMQ events** for everything else",
     "**Zipkin, Prometheus, Grafana** observe every service",
-], Inches(7.7), Inches(1.3), Inches(5.3), Inches(5.5), size=16, gap=9)
+    "**Database per service:** another service's login gets permission denied",
+    "**Docker Compose and Kubernetes** run the same images",
+], Inches(7.6), Inches(1.0), Inches(5.6), Inches(6.2), size=18, gap=7)
 
-# ---------------------------------------------------------------- 8 methodology: SEED(S) and boundaries
-s = new_slide(); title(s, "METHODOLOGY \u2013 SEED(S) DESIGN", 30)
+# ---------------------------------------------------------------- 7 methodology: SEED(S) and boundaries
+s = new_slide(); title(s, "METHODOLOGY – SEED(S) DESIGN", 30)
 bullets(s, [
     "**Actors:** Member, Librarian, Administrator",
-    "**Jobs:** find a book \u2022 borrow and return \u2022 know due dates and fines \u2022 keep the catalogue correct",
+    "**Jobs:** find a book • borrow and return • know due dates and fines • keep the catalogue correct",
     "**Interaction pattern** (sequence diagram): the issue-book request crosses gateway, lending, member and book",
-    f"**Actions and queries:** {len(data.OPS)} operations, published as **OpenAPI** (Swagger UI per service)",
-    "**Event storming:** Book Added \u2192 Loan Requested \u2192 Book Issued \u2192 Book Returned \u2192 Fine Assessed \u2192 Member Notified",
-    "**Bounded contexts:** Catalogue, Membership, Lending, Fines, Notifications = 5 services, each with the data it owns",
+    f"**Actions and queries:** {len(data.OPS)} operations, published as **OpenAPI**",
+    "**Event storming:** Book Added → Loan Requested → Book Issued → Book Returned → Fine Assessed → Member Notified",
+    "**Bounded contexts:** Catalogue, Membership, Lending, Fines, Notifications = 5 services",
     "**Operating model:** 3 stream-aligned teams + 1 platform team",
-], Inches(0.5), Inches(0.95), Inches(6.7), Inches(6), size=16, gap=8)
-picture(s, path("assets", "diag_sequence.png"), Inches(7.3), Inches(1.0), width=Inches(5.7), caption="Sequence of issuing a book")
+    "**Design document:** all SEED(S) artefacts are kept in docs/DESIGN.md",
+], Inches(0.4), Inches(0.95), Inches(6.9), Inches(6.3), size=19, gap=9)
+picture(s, path("assets", "diag_sequence.png"), Inches(7.4), Inches(1.0), width=Inches(5.6), caption="Sequence of issuing a book", cap_size=12)
 
-# ---------------------------------------------------------------- 9 saga and outbox
-s = new_slide(); title(s, "CONSISTENCY: SAGA + TRANSACTIONAL OUTBOX", 28)
-picture(s, path("assets", "diag_saga.png"), Inches(0.4), Inches(0.95), width=Inches(7.2), caption="Issue saga and its failure paths")
+# ---------------------------------------------------------------- 8 saga and outbox
+s = new_slide(); title(s, "SAGA + TRANSACTIONAL OUTBOX", 30)
+picture(s, path("assets", "diag_saga.png"), Inches(0.3), Inches(0.95), width=Inches(7.0), caption="Issue saga and its failure paths", cap_size=12)
 bullets(s, [
     "Loan saved as **PENDING**, copy reserved with key **loan-{id}-borrow**",
     "**ISSUED + outbox row** in one transaction; relay sends events to RabbitMQ (at least once)",
-    "**409 refused** \u2192 loan FAILED, nothing to undo",
-    "**Unknown outcome** \u2192 202 pending; recovery job replays the same keyed step",
-    "**Last step fails** \u2192 compensation releases the copy",
+    "**409 refused** → loan FAILED, nothing to undo",
+    "**Unknown outcome** → 202 pending; recovery job replays the same keyed step",
+    "**Last step fails** → compensation releases the copy",
     "Consumers ignore duplicate message ids",
-], Inches(7.8), Inches(1.1), Inches(5.3), Inches(5.8), size=16, gap=9)
+    "**Idempotency keys:** a repeated reserve changes the stock only once",
+    "Checked by fault-injection experiments E1 to E5",
+], Inches(7.5), Inches(1.0), Inches(5.6), Inches(6.2), size=19, gap=9)
 
-# ---------------------------------------------------------------- 10 tools and techniques
+# ---------------------------------------------------------------- 9 tools and techniques
 s = new_slide(); title(s, "TOOLS & TECHNIQUES")
 table(s, ["Area", "Tools used"], [
     ["Services", "Java 17, Spring Boot 3.2.5, Spring Cloud 2023.0.1 (Gateway, Eureka, Config, OpenFeign), Resilience4j"],
@@ -272,52 +274,95 @@ table(s, ["Area", "Tools used"], [
     ["Delivery", "Docker Compose (14 containers), Kubernetes manifests verified on minikube, GitHub Actions CI"],
     ["Testing", "JUnit 5 + Mockito (31 unit tests), scripted fault-injection experiments (13 checks)"],
     ["Dataset", "Goodbooks-10k: 10,000 real books (titles, authors, ISBNs)"],
-], Inches(0.6), Inches(1.0), SW - Inches(1.2), [2.0, 9.4], size=14, row_h=0.65)
+], Inches(0.5), Inches(1.0), SW - Inches(1.0), [2.0, 9.4], size=17, row_h=0.7)
 
-# ---------------------------------------------------------------- 11 implementation: UI
-s = new_slide(); title(s, "IMPLEMENTATION \u2013 WEB APPLICATION", 30)
-picture(s, path("shots", "dashboard.jpg"), Inches(0.35), Inches(1.0), width=Inches(6.2), caption="Librarian dashboard (live data from 4 services)")
-picture(s, path("shots", "books.jpg"), Inches(6.8), Inches(1.0), width=Inches(6.2), caption="Book-cover grid: 10,000 titles, server-side search and paging")
-bullets(s, ["Login page, role-based menus, loan history popup, fines and notifications", "Librarian: issue, return, overdue helper, fines \u2022 Member: own loans, fines, notifications"],
-        Inches(0.6), Inches(5.4), Inches(12.2), Inches(1.6), size=16, gap=6)
+# ---------------------------------------------------------------- 10 implementation: UI
+PIC_H = Inches(3.0)
 
-# ---------------------------------------------------------------- 12 implementation: roles and screens
-s = new_slide(); title(s, "IMPLEMENTATION \u2013 ROLES AND LENDING", 30)
-picture(s, path("shots", "lending.jpg"), Inches(0.35), Inches(1.0), width=Inches(6.2), caption="Librarian: lending page with status and actions")
-picture(s, path("shots", "member_loans.jpg"), Inches(6.8), Inches(1.0), width=Inches(6.2), caption="Member: only own loans (enforced at the gateway)")
-bullets(s, ["No token or bad token \u2192 **401**; wrong role or another member's data \u2192 **403**", "Stock endpoints (borrow, return) are internal: blocked for everybody at the gateway"],
-        Inches(0.6), Inches(5.4), Inches(12.2), Inches(1.6), size=16, gap=6)
 
-# ---------------------------------------------------------------- 13 results: performance
-s = new_slide(); title(s, "RESULTS & DISCUSSION \u2013 PERFORMANCE", 30)
-picture(s, path("assets", "perf_latency.png"), Inches(0.3), Inches(0.95), width=Inches(6.4), caption="Latency through the gateway (median and p95)")
-picture(s, path("assets", "perf_throughput.png"), Inches(6.8), Inches(0.95), width=Inches(6.2), caption="Throughput against client threads")
+def two_pictures(slide, p1, c1, p2, c2):
+    a = picture(slide, p1, Inches(0.5), Inches(0.95), height=PIC_H, caption=c1, cap_size=12)
+    gap = Inches(0.4)
+    total = a.width + gap + (PIC_H * 16 // 9)
+    b = picture(slide, p2, a.left + a.width + gap, Inches(0.95), height=PIC_H, caption=c2, cap_size=12)
+    shift = (SW - (b.left + b.width - a.left)) // 2 - a.left
+    for sh in slide.shapes:
+        if sh.shape_type is not None or sh.has_text_frame:
+            if sh.top > Inches(0.9):
+                sh.left = sh.left + shift
+    return a, b
+
+
+s = new_slide(); title(s, "IMPLEMENTATION – WEB APPLICATION", 30)
+two_pictures(s, path("shots", "dashboard.jpg"), "Librarian dashboard (live data from 4 services)", path("shots", "books.jpg"), "Book-cover grid: server-side search and paging")
 bullets(s, [
-    f"Reads take a median of **{min(lat[k]['p50'] for k in ep):.1f}\u2013{max(lat[k]['p50'] for k in ep):.1f} ms**, p95 below **{max(lat[k]['p95'] for k in ep):.0f} ms**",
-    f"Peak **{peak['rps']:.0f} requests/s** on one laptop, no failed request",
-    f"A late return gives a fine in **{statistics.mean(data.fine_ms):.0f} ms** and a notification in **{statistics.mean(data.note_ms):.0f} ms** (asynchronous path)",
-], Inches(0.6), Inches(4.75), Inches(12.2), Inches(2.4), size=16, gap=6)
+    "Login page with **role-based menus** (librarian and member views)",
+    "Dashboard: live counts of books, members, loans and fines from four services",
+    f"Books page: **{data.DS['n']:,} titles** as cover grid or table, searched and paged on the server",
+    "Librarian: issue, return, make overdue, fines, notifications",
+    "Member: only own loans, fines and notifications",
+    "Loan history popup, change password, automatic token refresh",
+], Inches(0.6), Inches(4.55), Inches(12.2), Inches(2.9), size=18, gap=5)
 
-# ---------------------------------------------------------------- 14 results: fault injection
-s = new_slide(); title(s, "RESULTS \u2013 FAULT-INJECTION EXPERIMENTS", 30)
+# ---------------------------------------------------------------- 11 implementation: roles and screens
+s = new_slide(); title(s, "IMPLEMENTATION – ROLES AND LENDING", 30)
+two_pictures(s, path("shots", "lending.jpg"), "Librarian: lending page with status and actions", path("shots", "member_loans.jpg"), "Member: only own loans (enforced at the gateway)")
+bullets(s, [
+    "No token or bad token → **401**",
+    "Wrong role or another member's data → **403**",
+    "Stock endpoints (borrow, return) are internal: blocked for everybody at the gateway",
+    "Lending page shows ISSUED, RETURNED and PENDING loans with actions",
+    "Issue dialog searches the catalogue on the server (50 matches at most)",
+    "A late return creates a fine and a notification automatically from events",
+], Inches(0.6), Inches(4.55), Inches(12.2), Inches(2.9), size=18, gap=5)
+
+# ---------------------------------------------------------------- 12 results: performance
+s = new_slide(); title(s, "RESULTS & DISCUSSION – PERFORMANCE", 30)
+two_pictures(s, path("assets", "perf_latency.png"), "Latency through the gateway (median and p95)", path("assets", "perf_throughput.png"), "Throughput against client threads")
+peak23 = max(r["rps"] for r in data.thr23)
+bullets(s, [
+    f"Reads take a median of **{min(lat[k]['p50'] for k in ep):.1f}–{max(lat[k]['p50'] for k in ep):.1f} ms**, p95 below **{max(lat[k]['p95'] for k in ep):.0f} ms**",
+    f"Peak **{peak['rps']:.0f} requests/s** on one laptop (idle), no failed request",
+    f"A late return gives a fine in **{statistics.mean(data.fine_ms):.0f} ms** and a notification in **{statistics.mean(data.note_ms):.0f} ms** (asynchronous path)",
+    f"Rerun on 23 Nov while the machine was busy: **{peak23:.0f} requests/s**, below the 300 goal, so results depend on load",
+    "System and data ready about **110 s** after docker compose up",
+], Inches(0.6), Inches(4.55), Inches(12.2), Inches(2.9), size=18, gap=6)
+
+# ---------------------------------------------------------------- 13 results: fault injection (table)
+s = new_slide(); title(s, "RESULTS – FAULT INJECTION", 30)
 table(s, ["Fault injected", "Observed"], [
     ["RabbitMQ stopped, 5 loans issued", f"all {len(E1['http_status'])} accepted (201); {E1['outbox_pending_during_outage']} events kept in the outbox; delivered {E1['seconds_until_outbox_empty_after_broker_restart']:.0f} s after restart"],
     ["book-service stopped during an issue", f"202 pending in {E2['seconds_to_accept']:.1f} s; ISSUED {E2['seconds_until_issued_after_book_service_restart']:.0f} s after restart; stock reduced exactly once"],
     ["Last copy requested twice", f"second request {E3['second_status']} ({E3['second_message']}); loan {E3['loan_state']}; stock unchanged"],
     ["Same idempotency key sent 3 times", f"stock decreased by {E4['decrement']}"],
-    ["3 events relayed twice", f"notifications {E5['notifications_before']} \u2192 {E5['notifications_after']} (duplicates ignored)"],
-    ["12 business rejections in a row", f"circuit breaker stays closed; next valid request succeeds"],
+    ["3 events relayed twice", f"notifications {E5['notifications_before']} → {E5['notifications_after']} (duplicates ignored)"],
+    ["12 business rejections in a row", "circuit breaker stays closed; next valid request succeeds"],
     ["One issue request", f"one trace: {E6['spans']} spans, {len(E6['services'])} services, {E6['duration_ms']:.0f} ms"],
-], Inches(0.5), Inches(0.95), SW - Inches(1.0), [3.3, 8.7], size=13, row_h=0.6)
-bullets(s, ["Experiments found two real defects: **10-second default timeouts** and a **circuit breaker counting business errors** (both fixed and re-measured)"],
-        Inches(0.6), Inches(6.3), Inches(12.2), Inches(0.9), size=15)
+], Inches(0.5), Inches(0.95), SW - Inches(1.0), [3.3, 8.7], size=16, row_h=0.8)
+
+# ---------------------------------------------------------------- 14 results: what the experiments showed
+s = new_slide(); title(s, "RESULTS – EXPERIMENT SUMMARY", 30)
+bullets(s, [
+    "All **13 checks** of the 7 experiments pass, on the laptop and in the GitHub Actions workflow",
+    "No event is lost when RabbitMQ is down: the **outbox** keeps it and the relay delivers it after the restart",
+    "A loan is never issued twice and stock never changes twice: **idempotency keys** make retries safe",
+    "Business rejections (409) do not open the **circuit breaker**; only server errors and timeouts count",
+    "Experiments found two real defects: **10-second default timeouts** and a **breaker counting business errors** (both fixed and re-measured)",
+    "Right after a restart the half-open breaker can answer 202 instead of 409; the **recovery job** finishes such loans",
+    "One request can be followed end to end in **Zipkin** across four services",
+], Inches(0.7), Inches(1.0), Inches(12), Inches(6.2), size=22, gap=11)
 
 # ---------------------------------------------------------------- 15 observability
 s = new_slide(); title(s, "OBSERVABILITY", 32)
-picture(s, path("shots", "zipkin_trace.jpg"), Inches(0.3), Inches(1.0), width=Inches(6.3), caption="Zipkin: one request across gateway, lending, member and book")
-picture(s, path("shots", "grafana.jpg"), Inches(6.8), Inches(1.0), width=Inches(6.2), caption="Grafana dashboard: business counters, p95, circuit breaker, JVM")
-bullets(s, ["Every log line carries the trace id \u2022 Prometheus scrapes 6 services every 5 s", "Business metrics: loans issued/returned/pending, outbox events waiting, fines, notifications"],
-        Inches(0.6), Inches(5.4), Inches(12.2), Inches(1.6), size=16, gap=6)
+two_pictures(s, path("shots", "zipkin_trace.jpg"), "Zipkin: one request across gateway, lending, member and book", path("shots", "grafana.jpg"), "Grafana dashboard: business counters, p95, circuit breaker, JVM")
+bullets(s, [
+    "Every log line carries the **trace id**",
+    "**Zipkin** shows the spans of one request across services",
+    "**Prometheus** scrapes 6 services every 5 s",
+    "**Grafana** dashboard is provisioned automatically (Compose and Kubernetes)",
+    "Business metrics: loans issued, returned, pending; outbox events waiting; fines; notifications",
+    "Technical metrics: p95 latency, circuit breaker state, JVM heap",
+], Inches(0.6), Inches(4.55), Inches(12.2), Inches(2.9), size=18, gap=5)
 
 # ---------------------------------------------------------------- 16 testing and deployment
 s = new_slide(); title(s, "TESTING AND DEPLOYMENT", 32)
@@ -325,43 +370,29 @@ bullets(s, [
     "**31 unit tests** pass (gateway 14, book 8, lending 7, fine 2); GitHub Actions builds, tests and builds all images on every push",
     "**13 automated experiment checks** run in a second workflow against the full system",
     "**17 defects** found by live checks, measurement, design review and deployment, each fixed and re-verified",
-    "**Docker Compose:** 14 containers; system and data ready about **110 s** after `docker compose up`",
+    "**Docker Compose:** 14 containers; system and data ready about **110 s** after docker compose up",
     "**Kubernetes (minikube):** 16 pods ready in about 5 minutes with 1 restart; init containers give the start order; Prometheus (6 of 6 targets up) and Grafana deployed too",
     "Database isolation proved: another service's login gets **permission denied**",
-], Inches(0.7), Inches(1.0), Inches(12), Inches(6), size=18, gap=10)
+    "**Repeatable:** measurements from 12 Nov and 23 Nov are both kept and compared in the report",
+], Inches(0.7), Inches(1.0), Inches(12), Inches(6.2), size=23, gap=11)
 
 # ---------------------------------------------------------------- 17 conclusion
-s = new_slide(); title(s, "CONCLUSION, LIMITATIONS & FUTURE SCOPE", 28)
+s = new_slide(); title(s, "CONCLUSION & FUTURE SCOPE", 30)
 bullets(s, [
-    "The system **meets all quality goals** on a single laptop: fast reads, safe multi-service operations, role-based access, full observability",
+    "**Conclusion:** the system meets its quality goals on one idle laptop: fast reads, safe multi-service operations, role-based access, full observability",
     "Saga + outbox + idempotent receivers keep **stock and loans consistent** without a distributed transaction",
-    "**Limitations:** one machine, one-node Kubernetes, demo users in configuration (password change kept in memory), outbox relay polls every 300 ms",
-    "**Future scope:** identity provider (OpenID Connect), search index (CQRS read model), multi-node cluster with autoscaling, adaptive circuit breaker, automatic trace-based anomaly detection",
-], Inches(0.7), Inches(1.0), Inches(12), Inches(6), size=19, gap=12)
+    "**Limitation:** one machine and one-node Kubernetes; the throughput goal was missed when the laptop was busy",
+    "**Limitation:** demo users live in configuration; a changed password is kept in memory only",
+    "**Limitation:** the outbox relay polls every 300 ms, without publisher confirms",
+    "**Overall:** 31 unit tests, 13 experiment checks and a 16-pod Kubernetes run all passed, with every defect found fixed and re-verified",
+    "**Future scope:** identity provider (OpenID Connect), search index (CQRS read model), multi-node cluster with autoscaling, adaptive circuit breaker, trace-based anomaly detection",
+], Inches(0.7), Inches(1.0), Inches(12), Inches(6.2), size=23, gap=11)
 
-# ---------------------------------------------------------------- 18-19 references (IEEE style)
-REFS = [
-    "S. Aydin and C. Cebi, \"Comparison of Choreography vs Orchestration Based Saga Patterns in Microservices,\" in Proc. 2022 Int. Conf. Electrical, Computer and Energy Technologies (ICECET), 2022, doi: 10.1109/ICECET55527.2022.9872665.",
-    "A. Megargel, C. Poskitt and V. Shankararaman, \"Microservices Orchestration vs. Choreography: A Decision Framework,\" in Proc. 25th IEEE Int. Enterprise Distributed Object Computing Conf. (EDOC), 2021, pp. 134-141, doi: 10.1109/EDOC52215.2021.00024.",
-    "E. Daraghmi, C.-P. Zhang and S.-M. Yuan, \"Enhancing Saga Pattern for Distributed Transactions within a Microservices Architecture,\" Applied Sciences, vol. 12, no. 12, p. 6242, 2022, doi: 10.3390/app12126242.",
-    "M. Mazzara, N. Dragoni, A. Bucchiarone, A. Giaretta, S. T. Larsen and S. Dustdar, \"Microservices: Migration of a Mission Critical System,\" IEEE Trans. Services Computing, vol. 14, no. 5, pp. 1464-1477, 2021, doi: 10.1109/TSC.2018.2889087.",
-    "X. Zhou et al., \"Fault Analysis and Debugging of Microservice Systems: Industrial Survey, Benchmark System, and Empirical Study,\" IEEE Trans. Software Engineering, vol. 47, no. 2, pp. 243-260, 2021, doi: 10.1109/TSE.2018.2887384.",
-    "J. Bogner, J. Fritzsch, S. Wagner and A. Zimmermann, \"Industry practices and challenges for the evolvability assurance of microservices,\" Empirical Software Engineering, vol. 26, no. 5, 2021, doi: 10.1007/s10664-021-09999-9.",
-    "H. Vural and M. Koyuncu, \"Does Domain-Driven Design Lead to Finding the Optimal Modularity of a Microservice?\" IEEE Access, vol. 9, pp. 32721-32733, 2021, doi: 10.1109/ACCESS.2021.3060895.",
-    "A. Singjai, U. Zdun and O. Zimmermann, \"Practitioner Views on the Interrelation of Microservice APIs and Domain-Driven Design: A Grey Literature Study Based on Grounded Theory,\" in Proc. 18th IEEE Int. Conf. Software Architecture (ICSA), 2021, pp. 25-35, doi: 10.1109/ICSA51549.2021.00011.",
-    "N. Stanley S A and S. Sebastian, \"Circuit Breaker: A Resilience Mechanism for Cloud Native Architecture,\" in Proc. 2023 Global Conf. Information Technologies and Communications (GCITC), 2023, pp. 1-8, doi: 10.1109/GCITC60406.2023.10426195.",
-    "K. Sivakumar, J. Sebastian and P. S. Thilagam, \"Self-Adaptive Circuit Breaker Open-State Interval for Enhancing Resiliency of Microservices,\" in Proc. 2024 OITS Int. Conf. Information Technology (OCIT), 2024, pp. 754-759, doi: 10.1109/OCIT65031.2024.00136.",
-    "B. Li et al., \"Enjoy your observability: an industrial survey of microservice tracing and analysis,\" Empirical Software Engineering, vol. 27, no. 1, 2022, doi: 10.1007/s10664-021-10063-9.",
-    "M. Usman, S. Ferlin, A. Brunstrom and J. Taheri, \"A Survey on Observability of Distributed Edge & Container-Based Microservices,\" IEEE Access, vol. 10, pp. 86904-86919, 2022, doi: 10.1109/ACCESS.2022.3193102.",
-    "M. Soualhia and F. Wuhib, \"Automated Traces-based Anomaly Detection and Root Cause Analysis in Cloud Platforms,\" in Proc. 2022 IEEE Int. Conf. Cloud Engineering (IC2E), 2022, pp. 253-260, doi: 10.1109/IC2E55432.2022.00034.",
-    "A. Barabanov and D. Makrushin, \"Authentication and Authorization in Microservice-Based Systems: Survey of Architecture Patterns,\" Voprosy Kiberbezopasnosti, no. 4(38), pp. 32-43, 2020, doi: 10.21681/2311-3456-2020-04-32-43.",
-    "S. Newman, Building Microservices: Designing Fine-Grained Systems, 2nd ed. Sebastopol, CA, USA: O'Reilly Media, 2021.",
-    "J. Carnell, Spring Microservices in Action. Shelter Island, NY, USA: Manning, 2017.",
-    "C. Richardson, Microservices Patterns. Shelter Island, NY, USA: Manning, 2018.",
-    "H. Garcia-Molina and K. Salem, \"Sagas,\" ACM SIGMOD Record, vol. 16, no. 3, pp. 249-259, 1987.",
-    "M. T. Nygard, Release It! Design and Deploy Production-Ready Software, 2nd ed. Pragmatic Bookshelf, 2018.",
-    "Z. Zajac, \"Goodbooks-10k: a new dataset for book recommendations,\" GitHub repository zygmuntz/goodbooks-10k, 2017.",
-]
+# ---------------------------------------------------------------- 18-19 references (IEEE style; IEEE or Springer sources, taken from the report)
+import content_c  # noqa: E402
+R = content_c.REFS
+pick = [25, 26, 29, 31, 32, 33, 34, 35, 36, 30, 0, 1, 6, 7, 14, 17, 38, 20, 2, 3]
+REFS = [R[i] for i in pick]
 for part, chunk in enumerate((REFS[:10], REFS[10:]), 1):
     s = new_slide(); title(s, "REFERENCES")
     tb = s.shapes.add_textbox(Inches(0.6), Inches(0.9), SW - Inches(1.2), Inches(6.3))
@@ -369,13 +400,32 @@ for part, chunk in enumerate((REFS[:10], REFS[10:]), 1):
     tf.word_wrap = True
     for i, r in enumerate(chunk):
         p = tf.paragraphs[0] if i == 0 else tf.add_paragraph()
-        p.space_after = Pt(3)
-        run(p, f"[{(0 if part == 1 else 10) + i + 1}] {r}", 11)
+        p.space_after = Pt(4)
+        run(p, f"[{(0 if part == 1 else 10) + i + 1}] {r}", 14)
 
 # ---------------------------------------------------------------- move the Thank-You slide back to the end
 lst = prs.slides._sldIdLst
 elem = lst[1]
 lst.remove(elem)
 lst.append(elem)
+
+
+# ---------------------------------------------------------------- Times New Roman everywhere (text boxes, tables, title slide)
+def force_font(shapes):
+    for sh in shapes:
+        if sh.has_text_frame:
+            for par in sh.text_frame.paragraphs:
+                for r in par.runs:
+                    r.font.name = FONT
+        if getattr(sh, "has_table", False) and sh.has_table:
+            for row in sh.table.rows:
+                for c in row.cells:
+                    for par in c.text_frame.paragraphs:
+                        for r in par.runs:
+                            r.font.name = FONT
+
+
+for sl in prs.slides:
+    force_font(sl.shapes)
 prs.save(OUT)
 print("saved", OUT, "with", len(prs.slides), "slides")

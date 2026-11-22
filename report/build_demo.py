@@ -15,7 +15,7 @@ sys.path.insert(0, HERE)
 from demo_steps import STEPS, TIPS  # noqa: E402
 
 FONT = "Times New Roman"
-TEAM = "Manasa Krishnakumar (1RV23IS067), Gauri G Singh (1RV23IS051), Akanksha Rani (1RV23IS010)"
+TEAM = "Akanksha Rani (1RV23IS010), Gauri G Singh (1RV23IS051), Manasa Krishnakumar (1RV23IS067)"
 ACCOUNTS = [("Librarian (full access)", "librarian", "librarian123"), ("Member (own data only)", "asha.rao@example.com", "member123")]
 LINKS = [("Application", "http://localhost:3000"), ("Eureka", "http://localhost:8761"), ("Zipkin", "http://localhost:9411"),
          ("Grafana", "http://localhost:3001"), ("RabbitMQ", "http://localhost:15672 (guest / guest)"), ("Prometheus", "http://localhost:9090")]
