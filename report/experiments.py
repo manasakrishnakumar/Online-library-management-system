@@ -92,6 +92,23 @@ def wait_breaker_closed(timeout=120):
     return False
 
 
+# ------------------------------------------------------------ warm-up: on a slow machine (CI) the first calls through the gateway can still fail
+def warm_up(timeout=180):
+    """Issue probe loans (fresh books) until one is accepted with 201, so E1 starts from a system that really answers."""
+    t0 = time.time()
+    k = 0
+    while time.time() - t0 < timeout:
+        r = post("/api/loans/issue", {"bookId": 1500 + k, "memberId": 11})
+        k += 1
+        if r.status_code == 201:
+            return True
+        time.sleep(2)
+    return False
+
+
+print("warm-up:", warm_up())
+quiet()
+
 # ------------------------------------------------------------ E1 outbox: broker outage
 print("E1 outbox during a RabbitMQ outage")
 notes_before = len(get("/api/notifications").json())
